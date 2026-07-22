@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b12;
+    --text: #f0f0f0;
+    --muted: #a8b4c4;
+    --dim: #6b7d94;
+    --line: rgba(255,255,255,.14);
+    --violet: #a78bfa;
+    --violet-2: #7c3aed;
+    --cyan: #38bdf8;
+    --rose: #f472b6;
+    --gold: #f5a623;
+    --green: #34d399;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1200px; height:630px; overflow:hidden; background:var(--bg); }
+  body {
+    font-family:'Inter',sans-serif;
+    color:var(--text);
+    position:relative;
+  }
+  .orb { position:absolute; border-radius:50%; }
+  .orb-a { width:1000px;height:1000px; background:radial-gradient(circle, var(--violet-2) 0%, rgba(124,58,237,0) 68%); top:-420px; left:-360px; opacity:.85; }
+  .orb-b { width:900px;height:900px; background:radial-gradient(circle, var(--cyan) 0%, rgba(56,189,248,0) 68%); bottom:-420px; right:-320px; opacity:.7; }
+  .orb-c { width:640px;height:640px; background:radial-gradient(circle, var(--rose) 0%, rgba(244,114,182,0) 68%); top:120px; right:60px; opacity:.4; }
+
+  .frame { position:absolute; inset:26px; border:1px solid var(--line); border-radius:26px; }
+  .badge {
+    position:absolute; top:48px; right:64px;
+    font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--dim); letter-spacing:.06em;
+  }
+
+  .layout {
+    position:relative; z-index:2; width:100%; height:100%;
+    display:flex; align-items:center;
+    padding:0 64px;
+    gap:56px;
+  }
+
+  .left { flex:0 0 auto; max-width:600px; padding-left:2px; }
+
+  .kicker {
+    font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:500;
+    letter-spacing:.26em; text-transform:uppercase; color:var(--gold); margin-bottom:20px;
+  }
+  h1 { font-size:64px; font-weight:900; line-height:1.0; letter-spacing:-0.03em; margin-bottom:20px; }
+  h1 .accent { color:var(--gold); }
+  .sub { font-size:20px; font-weight:400; color:var(--muted); line-height:1.5; margin-bottom:28px; }
+
+  .tags { display:flex; gap:10px; flex-wrap:wrap; }
+  .tag {
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; letter-spacing:.04em;
+    text-transform:uppercase; padding:8px 14px; border-radius:999px; border:1px solid var(--line);
+    background:rgba(255,255,255,.05); color:var(--text);
+  }
+  .tag.t1 { color:var(--gold); border-color:rgba(245,166,35,.45); }
+  .tag.t2 { color:var(--cyan); border-color:rgba(56,189,248,.45); }
+  .tag.t3 { color:var(--rose); border-color:rgba(244,114,182,.45); }
+  .tag.t4 { color:var(--violet); border-color:rgba(167,139,250,.45); }
+
+  .right { flex:1 1 auto; display:flex; justify-content:center; }
+  .card {
+    width:440px;
+    background:rgba(14,24,38,.82);
+    border:1px solid var(--line);
+    border-radius:18px;
+    box-shadow:0 30px 90px rgba(0,0,0,.55);
+    overflow:hidden;
+  }
+  .card-head {
+    display:flex; align-items:center; gap:8px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+  }
+  .dot { width:9px;height:9px;border-radius:50%; }
+  .dot.r{background:#f87171;} .dot.y{background:#fbbf24;} .dot.g{background:#34d399;}
+  .card-title {
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--dim); margin-left:6px; letter-spacing:.03em;
+  }
+  .card-body { padding:22px 22px 24px; font-family:'JetBrains Mono',monospace; font-size:14px; line-height:1.85; }
+  .line { display:block; white-space:pre; }
+  .c-muted { color:var(--dim); }
+  .c-text { color:var(--muted); }
+  .c-gold { color:var(--gold); }
+  .c-cyan { color:var(--cyan); }
+  .c-green { color:var(--green); }
+  .arrow { color:var(--dim); }
+  .divider { height:1px; background:var(--line); margin:14px 0; }
+  .capsule-box {
+    margin-top:4px;
+    border-left:2px solid var(--gold);
+    padding:2px 0 2px 14px;
+    color:var(--text);
+    font-size:13px;
+    line-height:1.7;
+  }
+</style>
+</head>
+<body>
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <div class="orb orb-c"></div>
+  <div class="frame"></div>
+  <div class="badge">SILLYTAVERN EXTENSION</div>
+
+  <div class="layout">
+    <div class="left">
+      <div class="kicker">NDS &middot; Narration Beat Switch</div>
+      <h1>Detect the beat.<br>Swap the <span class="accent">writer</span>.</h1>
+      <div class="sub">A cheap classifier reads the scene every turn and hands the real model one small, focused instruction capsule &mdash; instead of one giant rulebook.</div>
+      <div class="tags">
+        <div class="tag t1">Literary Prose</div>
+        <div class="tag t2">D&amp;D Mechanics</div>
+        <div class="tag t3">Genre Chameleon</div>
+        <div class="tag t4">Legacy v1</div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="card">
+        <div class="card-head">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <div class="card-title">classifier.log</div>
+        </div>
+        <div class="card-body">
+          <span class="line c-muted">&gt; user: "I draw my sword and attack"</span>
+          <span class="line c-text">&gt; sensor: gathering scene context&hellip;</span>
+          <span class="line c-text">&gt; classify <span class="arrow">&rarr;</span> <span class="c-green">{"style":"clash"}</span></span>
+          <div class="divider"></div>
+          <span class="line c-cyan">inject &lt;prose_style name="clash"&gt;</span>
+          <div class="capsule-box">
+            Write like a war reporter's dispatch<br>
+            filed under fire. Short. Percussive.<br>
+            No adverbs. Every hit lands on the page.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

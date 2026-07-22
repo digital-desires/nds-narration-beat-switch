@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b12;
+    --text: #f0f0f0;
+    --muted: #a8b4c4;
+    --dim: #6b7d94;
+    --line: rgba(255,255,255,.14);
+    --violet: #a78bfa;
+    --violet-2: #7c3aed;
+    --cyan: #38bdf8;
+    --rose: #f472b6;
+    --gold: #f5a623;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1200px; height:680px; overflow:hidden; background:var(--bg); }
+  body { font-family:'Inter',sans-serif; color:var(--text); position:relative; }
+
+  .orb { position:absolute; border-radius:50%; }
+  .orb-a { width:900px;height:900px; background:radial-gradient(circle, var(--violet-2) 0%, rgba(124,58,237,0) 68%); top:-460px; left:-320px; opacity:.55; }
+  .orb-b { width:800px;height:800px; background:radial-gradient(circle, var(--cyan) 0%, rgba(56,189,248,0) 68%); bottom:-420px; right:-280px; opacity:.5; }
+
+  .wrap { position:relative; z-index:2; padding:56px 64px; }
+
+  .kicker {
+    font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:500;
+    letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin-bottom:14px;
+  }
+  h1 { font-size:42px; font-weight:800; letter-spacing:-0.02em; margin-bottom:10px; }
+  .sub { font-size:18px; color:var(--muted); max-width:900px; line-height:1.5; margin-bottom:8px; }
+
+  .trigger-row {
+    margin-top:20px; margin-bottom:34px;
+    display:flex; align-items:center; gap:14px;
+    font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--dim);
+  }
+  .trigger-pill {
+    padding:8px 16px; border-radius:999px; border:1px solid var(--line);
+    background:rgba(255,255,255,.04); color:var(--text);
+  }
+  .trigger-pill b { color:var(--gold); font-weight:600; }
+
+  .cols { display:flex; gap:22px; }
+  .card {
+    flex:1;
+    background:rgba(14,24,38,.82);
+    border:1px solid var(--line);
+    border-radius:18px;
+    box-shadow:0 24px 70px rgba(0,0,0,.5);
+    overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .card-head {
+    padding:16px 20px;
+    border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+  }
+  .card-name { font-size:17px; font-weight:700; margin-bottom:3px; }
+  .card-tag {
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase;
+  }
+  .card-body { padding:22px 20px; font-size:15.5px; line-height:1.62; color:var(--muted); flex:1; }
+  .card-body .lede { color:var(--text); font-weight:600; margin-bottom:10px; display:block; }
+  .card-body em { color:var(--text); font-style:normal; }
+
+  .c1 .card-tag, .c1 .lede { color: var(--gold); }
+  .c2 .card-tag, .c2 .lede { color: var(--rose); }
+  .c3 .card-tag, .c3 .lede { color: var(--cyan); }
+  .c1 { border-color: rgba(245,166,35,.35); }
+  .c2 { border-color: rgba(244,114,182,.35); }
+  .c3 { border-color: rgba(56,189,248,.35); }
+
+  .foot {
+    margin-top:26px;
+    font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--dim); text-align:center;
+  }
+</style>
+</head>
+<body>
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+
+  <div class="wrap">
+    <div class="kicker">Same dispatcher &middot; Same trigger &middot; Three templates</div>
+    <h1>One classifier call. Three completely different games.</h1>
+    <div class="sub">Swap the active template and every capsule reskins &mdash; the beat-detection layer never changes.</div>
+
+    <div class="trigger-row">
+      <span>trigger:</span>
+      <div class="trigger-pill">"<b>violence happening now</b> &mdash; a blow has landed"</div>
+    </div>
+
+    <div class="cols">
+      <div class="card c1">
+        <div class="card-head">
+          <div class="card-name">Literary Prose</div>
+          <div class="card-tag">clash &middot; war-dispatch register</div>
+        </div>
+        <div class="card-body">
+          <span class="lede">"Write this beat like a war reporter's dispatch filed under fire&hellip;"</span>
+          The axe came down. Kade got the shield up. Wood screamed and split to the boss. His arm went numb to the elbow.<br><br>
+          <em>No adverbs. Every hit lands on the page.</em>
+        </div>
+      </div>
+
+      <div class="card c2">
+        <div class="card-head">
+          <div class="card-name">Genre Chameleon</div>
+          <div class="card-tag">clash &middot; pulp sword &amp; sorcery</div>
+        </div>
+        <div class="card-body">
+          <span class="lede">"Write this beat like pulp sword-and-sorcery at full volume&hellip;"</span>
+          The orc chieftain's blade came down like a falling star, and Kade met it with a roar that tore his own throat raw. Steel screamed against steel.<br><br>
+          <em>Myth-scaled. Blood named outright.</em>
+        </div>
+      </div>
+
+      <div class="card c3">
+        <div class="card-head">
+          <div class="card-name">D&amp;D Mechanics</div>
+          <div class="card-tag">combat &middot; 5e turn structure</div>
+        </div>
+        <div class="card-body">
+          <span class="lede">"Resolve it with real tabletop structure, adapted for narrated play&hellip;"</span>
+          "The bandit swings &mdash; rolls 14, needs to beat your AC 15 &mdash; the blade skids off your guard."<br><br>
+          <em>Initiative, action economy, real DCs. No prose voice at all.</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">nds-narration-beat-switch &middot; one capsule swap, not a rewritten preset</div>
+  </div>
+</body>
+</html>
