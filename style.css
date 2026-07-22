@@ -1,0 +1,72 @@
+#nbs-settings .nbs-settings-row {
+    margin: 6px 0;
+}
+
+#nbs-settings .nbs-field {
+    margin: 8px 0;
+}
+
+#nbs-settings .nbs-field label {
+    display: block;
+    margin-bottom: 2px;
+    opacity: 0.85;
+}
+
+#nbs-settings .nbs-hint {
+    font-size: 0.85em;
+    opacity: 0.65;
+    margin: 4px 0 8px;
+}
+
+#nbs-settings .nbs-status {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin-top: 8px;
+}
+
+#nbs-settings .nbs-local-or[hidden] {
+    display: none !important;
+}
+
+#nbs-settings .nbs-row-inline {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+#nbs-settings .nbs-row-inline select {
+    flex: 1;
+    min-width: 0;
+}
+
+#nbs-settings .nbs-dirty-banner {
+    font-size: 0.85em;
+    padding: 4px 8px;
+    margin: 6px 0;
+    border-left: 3px solid orange;
+    opacity: 0.9;
+}
+
+#nbs-settings .nbs-dirty-banner[hidden],
+#nbs-settings #nbs-template-name-row[hidden] {
+    display: none !important;
+}
+
+#nbs-settings .nbs-hint-inline {
+    font-size: 0.8em;
+    opacity: 0.6;
+    font-weight: normal;
+}
+
+#nbs-settings .nbs-count-warn {
+    font-size: 0.8em;
+    color: orange;
+}
+
+#nbs-settings #nbs-capsule-body,
+#nbs-settings #nbs-io-textarea {
+    width: 100%;
+    font-family: monospace;
+    font-size: 0.85em;
+    resize: vertical;
+}

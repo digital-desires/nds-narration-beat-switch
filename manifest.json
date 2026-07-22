@@ -1,0 +1,11 @@
+{
+    "display_name": "NDS: Narration Beat Switch",
+    "loading_order": 105,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "Custom",
+    "version": "0.2.0",
+    "auto_update": false
+}
