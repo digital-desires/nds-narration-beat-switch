@@ -46,6 +46,7 @@
     };
 
     const modules = [
+        'lib/nds_dual_mode.js',
         'library/default_templates.js',
         'src/storage.js',
         'src/state.js',
@@ -85,10 +86,10 @@
         window.NBS.UI.ensureSettingsPanel();
         window.NBS.Inject.registerHook();
 
-        // NDS: Control — power switch tab (retry until toolbar exists)
-        window.NBS.UI.registerUnifiedToolbarButtons();
+        // NDS: Control — dual-mode chrome (suite or standalone shell)
+        window.NBS.UI.bootChrome();
         document.addEventListener('st-unified-toolbar-ready', () => {
-            window.NBS.UI.registerUnifiedToolbarButtons();
+            window.NBS.UI.bootChrome();
         });
         document.addEventListener('narrator-suite-master-changed', () => {
             window.STUnifiedToolbar?.update?.();

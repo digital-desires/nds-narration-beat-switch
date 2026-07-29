@@ -471,6 +471,64 @@
             window.STUnifiedToolbar?.update?.();
         },
 
+        getToolbarActions() {
+            const label = window.NBS.State.lastLabel;
+            const title = label ? `Beat Switch (${label})` : 'Beat Switch';
+            return [
+                {
+                    id: 'nbs-power',
+                    group: 'nbs',
+                    groupLabel: 'Beat Style',
+                    groupIcon: 'fa-feather-pointed',
+                    title,
+                    icon: 'fa-power-off',
+                    master: true,
+                    active: () => !!window.NBS.State.getSettings().enabled,
+                    warning: () => !window.NBS.State.getSettings().enabled,
+                    onClick: () => {
+                        UI.setEnabled(!window.NBS.State.getSettings().enabled);
+                    },
+                },
+                {
+                    id: 'nbs-last-label',
+                    group: 'nbs',
+                    groupLabel: 'Beat Style',
+                    groupIcon: 'fa-feather-pointed',
+                    title: label ? `Last: ${label}` : 'Last: —',
+                    icon: 'fa-tag',
+                    secondary: true,
+                    visible: () => !!window.NBS.State.getSettings().enabled,
+                    onClick: () => {
+                        UI.refreshStatus();
+                        window.STUnifiedToolbar?.update?.();
+                    },
+                },
+            ];
+        },
+
+        async bootChrome() {
+            const dual = window.NDSDualMode;
+            if (!dual?.boot) {
+                UI.registerUnifiedToolbarButtons();
+                return;
+            }
+            const shellUrl = window.NBS_EXTENSION_ROOT
+                ? new URL('lib/nds_tool_shell.js', window.NBS_EXTENSION_ROOT).href
+                : null;
+            const mode = await dual.boot({
+                id: 'beat-style',
+                title: 'Beat Style',
+                icon: 'fa-feather-pointed',
+                storageKey: 'nds-nbs-shell',
+                shellScriptUrl: shellUrl,
+                isEnabled: () => !!window.NBS.State.getSettings().enabled,
+                setEnabled: (on) => UI.setEnabled(!!on),
+                getActions: () => UI.getToolbarActions(),
+            });
+            if (mode === 'none') UI.registerUnifiedToolbarButtons();
+            console.log(`[NBS] Chrome mode: ${mode}`);
+        },
+
         registerUnifiedToolbarButtons() {
             const toolbar = window.STUnifiedToolbar;
             if (!toolbar?.register) {
@@ -478,40 +536,7 @@
                 return false;
             }
 
-            const label = window.NBS.State.lastLabel;
-            const title = label ? `Beat Switch (${label})` : 'Beat Switch';
-
-            toolbar.register({
-                id: 'nbs-power',
-                group: 'nbs',
-                groupLabel: 'Beat Style',
-                groupIcon: 'fa-feather-pointed',
-                title,
-                icon: 'fa-power-off',
-                master: true,
-                active: () => !!window.NBS.State.getSettings().enabled,
-                warning: () => !window.NBS.State.getSettings().enabled,
-                onClick: () => {
-                    UI.setEnabled(!window.NBS.State.getSettings().enabled);
-                },
-            });
-
-            // Secondary: show last chosen style (informational click refreshes status)
-            toolbar.register({
-                id: 'nbs-last-label',
-                group: 'nbs',
-                groupLabel: 'Beat Style',
-                groupIcon: 'fa-feather-pointed',
-                title: label ? `Last: ${label}` : 'Last: —',
-                icon: 'fa-tag',
-                secondary: true,
-                visible: () => !!window.NBS.State.getSettings().enabled,
-                onClick: () => {
-                    UI.refreshStatus();
-                    toolbar.update?.();
-                },
-            });
-
+            UI.getToolbarActions().forEach((a) => toolbar.register(a));
             UI._toolbarRegistered = true;
             UI.stopToolbarRetry();
             toolbar.update?.();
