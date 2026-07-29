@@ -52,7 +52,7 @@ Here's the reveal: Literary Prose and D&D Mechanics are not two features. They'r
 
 **Genre Chameleon** proves it by taking the *same eleven beats* as Literary Prose and reskinning every single one into a different genre: the same combat beat that reads like a war dispatch in Literary Prose reads like pulp sword-and-sorcery here. The same negotiation beat becomes a hardboiled noir interrogation. A quiet aftermath scene becomes a fairy tale. Nothing else about your setup changes — you flip one dropdown.
 
-That's the actual idea behind this project: the detector is a small, dumb, reusable dispatcher. What it dispatches *to* can be anything — a writing style, a rules engine, a genre, a tone, a whole different game. Four templates ship in the box (Literary Prose, D&D Mechanics, Genre Chameleon, and the original **Legacy v1** capsule set) and nothing stops you from building a fifth for your own campaign.
+That's the actual idea behind this project: the detector is a small, dumb, reusable dispatcher. What it dispatches *to* can be anything — a writing style, a rules engine, a genre, a tone, a whole different game. Five templates ship in the box (Literary Prose, GM Manual Extended, D&D Mechanics, Genre Chameleon, and the original **Legacy v1** capsule set) and nothing stops you from building your own for your campaign.
 
 ## Building your own — no code required
 
@@ -81,7 +81,7 @@ flowchart LR
     C --> D["OpenRouter\nclassify call"]
     D --> E{"label\ne.g. clash"}
     E --> F["Templates\nlook up capsule"]
-    F --> G["prose_style capsule\nwrapped & set as chat variable"]
+    F --> G["scene_directive capsule\nwrapped & set as chat variable"]
     G --> H["{{getvar::nds_beat_style}}\nin your prompt"]
     H --> I["Main model writes\nthe next reply"]
 ```
@@ -93,6 +93,7 @@ The classifier never writes prose — it only picks a label, cheaply and fast (d
 | Template | Labels | Register |
 |---|---|---|
 | **Literary Prose** | `clash` `court` `dread` `heat` `ember` `wander` `wire` `ledger` `wound` `levity` `generic` | Grounded literary craft per beat. The default. |
+| **GM Manual Extended** | *(same labels as Literary Prose)* | Same beats, but each capsule injects deep *refereeing* — how the world adjudicates the moment — instead of prose. Swap it in to harden world-logic. |
 | **D&D Mechanics** | `combat` `skill-check` `social-encounter` `exploration` `downtime` `death-and-dying` `treasure-and-rewards` `npc-stats` `generic` | Real 5e-adjacent rules adapted for narrated chat play. |
 | **Genre Chameleon** | *(same 11 labels as Literary Prose)* | Identical beats, deliberately different genre lens each — the system demo. |
 | **Legacy v1** | *(same 11 labels)* | The original, lighter-touch capsule set. |

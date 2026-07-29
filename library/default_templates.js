@@ -19,6 +19,7 @@
 
     window.NBS.DefaultTemplateFiles = [
         'literary_prose.md',
+        'gm_manual_ext.md',
         'dnd_mechanics.md',
         'legacy_v1.md',
         'genre_chameleon.md',

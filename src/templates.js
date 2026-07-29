@@ -158,7 +158,14 @@
             const cap = caps.find(c => c.label === label)
                 || caps.find(c => c.label === this.getFallbackLabel(tpl));
             if (!cap) return '';
-            return `<prose_style name="${cap.label}">\n${cap.body.trim()}\n</prose_style>`;
+            const header =
+                'This is the active directive for the current beat. Both halves below are '
+                + 'binding for this reply, not optional styling. In your Referee pass, obey the '
+                + 'MANDATE — it names what must change in the scene and the habit you must not '
+                + 'fall into. In your Narrator pass, obey the RENDER — how the result must reach '
+                + 'the page, and what must stay off it. Where either MANDATE or RENDER disagrees '
+                + 'with your default instinct, the directive wins.';
+            return `<scene_directive name="${cap.label}">\n${header}\n\n${cap.body.trim()}\n</scene_directive>`;
         },
 
         isValidLabel(label) {
