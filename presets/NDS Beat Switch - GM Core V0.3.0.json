@@ -56,6 +56,22 @@
                                               ]
                     },
                     {
+                        "identifier":  "nds_beat_style_slot",
+                        "name":  "NDS Beat Switch",
+                        "system_prompt":  false,
+                        "enabled":  true,
+                        "marker":  false,
+                        "role":  "system",
+                        "content":  "{{getvar::nds_beat_style}}",
+                        "injection_position":  0,
+                        "injection_depth":  4,
+                        "forbid_overrides":  false,
+                        "injection_order":  100,
+                        "injection_trigger":  [
+
+                                              ]
+                    },
+                    {
                         "identifier":  "worldInfoBefore",
                         "name":  "World Info Before",
                         "system_prompt":  true,
@@ -102,22 +118,6 @@
                         "name":  "History",
                         "system_prompt":  true,
                         "marker":  true
-                    },
-                    {
-                        "identifier":  "nds_beat_style_slot",
-                        "name":  "NDS Beat Switch",
-                        "system_prompt":  false,
-                        "enabled":  true,
-                        "marker":  false,
-                        "role":  "system",
-                        "content":  "{{getvar::nds_beat_style}}",
-                        "injection_position":  0,
-                        "injection_depth":  4,
-                        "forbid_overrides":  false,
-                        "injection_order":  100,
-                        "injection_trigger":  [
-
-                                              ]
                     },
                     {
                         "identifier":  "c1d2e3f4-a5b6-7890-cdef-012345678902",
@@ -185,6 +185,10 @@
                                                "enabled":  true
                                            },
                                            {
+                                               "identifier":  "nds_beat_style_slot",
+                                               "enabled":  true
+                                           },
+                                           {
                                                "identifier":  "worldInfoBefore",
                                                "enabled":  true
                                            },
@@ -214,10 +218,6 @@
                                            },
                                            {
                                                "identifier":  "chatHistory",
-                                               "enabled":  true
-                                           },
-                                           {
-                                               "identifier":  "nds_beat_style_slot",
                                                "enabled":  true
                                            },
                                            {
