@@ -1,8 +1,3 @@
-## Support the project
-
-If Narration Beat Switch improved your roleplay and you want to support its development:
-
-[Support Digital Desires on Ko-fi](https://ko-fi.com/digitaldesires)
 
 # NDS: Narration Beat Switch
 
@@ -35,6 +30,21 @@ Only three factory templates ship with the extension:
 | **Genre Chameleon** | 11 | A deliberately varied, semi-random genre showcase for the routing system. |
 
 You can create, edit, import, and export templates from the extension settings.
+
+## Built-in template editor
+
+Open **Extensions -> NDS: Narration Beat Switch -> Templates & Capsules** to edit the instruction system without touching JSON or extension code.
+
+The editor lets you:
+
+- select the active template or create a new one;
+- add, delete, and rename capsules;
+- edit each capsule's label, one-line classifier trigger, and full instruction body;
+- see warnings when a trigger exceeds 200 characters or a capsule body becomes unusually large;
+- use **Edit as text** to copy and revise a complete template;
+- paste a shared template into the text box, choose **Apply text**, review it, and then save it.
+
+Changes stay in a draft until you press **Save template**. Without the optional disk-storage plugin, saved templates remain in normal SillyTavern extension settings.
 
 ## Install from SillyTavern
 
@@ -96,6 +106,12 @@ presets/                    optional shareable completion preset
 ```
 
 No build step or server plugin is required for normal use.
+
+## Support NDS
+
+Enjoying the extension? You can help fund more development, testing, and questionable experiments here:
+
+[Support Digital Desires on Ko-fi](https://ko-fi.com/digitaldesires)
 
 ## License
 
