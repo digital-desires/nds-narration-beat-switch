@@ -1,3 +1,9 @@
+## Support the project
+
+If Narration Beat Switch improved your roleplay and you want to support its development:
+
+[Support Digital Desires on Ko-fi](https://ko-fi.com/digitaldesires)
+
 # NDS: Narration Beat Switch
 
 **One beat. One capsule.**
