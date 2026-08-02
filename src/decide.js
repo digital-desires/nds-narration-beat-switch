@@ -19,7 +19,7 @@
                 const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
                 if (fence) text = fence[1].trim();
                 const obj = JSON.parse(text);
-                return window.NBS.State.normalizeLabel(obj?.style ?? obj?.label ?? obj?.beat);
+                return window.NBS.State.normalizeLabel(obj?.style);
             } catch (_) {
                 const m = String(raw || '').match(/"style"\s*:\s*"([a-z0-9_-]+)"/i);
                 if (m) return window.NBS.State.normalizeLabel(m[1]);

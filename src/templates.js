@@ -98,7 +98,7 @@
             const list = Array.isArray(tpl?.capsules) ? tpl.capsules : [];
             for (const cap of list) {
                 const label = String(cap?.label || '').trim().toLowerCase();
-                if (!label || label === 'none' || seen.has(label)) continue;
+                if (!LABEL_RE.test(label) || label === 'none' || seen.has(label)) continue;
                 seen.add(label);
                 out.capsules.push({
                     label,
@@ -140,9 +140,7 @@
 
         getLabelSet(tpl) {
             tpl = tpl || this.getActiveTemplate();
-            const set = new Set((tpl?.capsules || []).map(c => c.label));
-            set.add('none');
-            return set;
+            return new Set((tpl?.capsules || []).map(c => c.label));
         },
 
         getFallbackLabel(tpl) {
@@ -159,12 +157,16 @@
                 || caps.find(c => c.label === this.getFallbackLabel(tpl));
             if (!cap) return '';
             const header =
-                'This is the active directive for the current beat. Both halves below are '
-                + 'binding for this reply, not optional styling. In your Referee pass, obey the '
-                + 'MANDATE — it names what must change in the scene and the habit you must not '
-                + 'fall into. In your Narrator pass, obey the RENDER — how the result must reach '
-                + 'the page, and what must stay off it. Where either MANDATE or RENDER disagrees '
-                + 'with your default instinct, the directive wins.';
+                'This is the active per-beat corrective directive. It supplements the complete '
+                + 'narrator prompt; established character definitions, world state, stats, '
+                + 'abilities, relationships, and mechanics remain authoritative. The user message '
+                + 'states an unresolved intention, not its result. In the Referee pass, use '
+                + 'ADJUDICATE and PROCEDURE to evaluate that intention through the full context. '
+                + 'Friction means checking relevant constraints and independent agents; it never '
+                + 'requires adversity, cost, escalation, failure, or a changed state. GUARDRAILS '
+                + 'prevent mode-specific distortions without predetermining the outcome. In the '
+                + 'Narrator pass, RENDER only the context-supported result and keep hidden reasoning '
+                + 'off-page. The directive is binding as a corrective lens, never as a plot outcome.';
             return `<scene_directive name="${cap.label}">\n${header}\n\n${cap.body.trim()}\n</scene_directive>`;
         },
 
@@ -177,24 +179,21 @@
         buildClassifierIndex(tpl) {
             tpl = tpl || this.getActiveTemplate();
             const caps = tpl?.capsules || [];
-            const fallback = this.getFallbackLabel(tpl);
             const cleanTrigger = (t) => String(t || '').replace(/[|\r\n]+/g, ' ').trim();
 
-            const labels = caps.map(c => c.label).concat('none').join(', ');
+            const labels = caps.map(c => c.label).join(', ');
             const rows = caps.map(c => {
-                const mark = c.label === fallback ? '(fallback) ' : '';
-                return `| ${c.label} | ${mark}${cleanTrigger(c.trigger) || 'no description provided'} |`;
+                return `${c.label}: ${cleanTrigger(c.trigger) || 'no description provided'}`;
             });
-            rows.push(`| none | unclear intent / bare "continue" — runtime resolves to the fallback |`);
 
             return [
-                '## Classifier index',
+                '## Labels',
                 '',
-                `Choose exactly one label. Allowed labels (exact, lowercase): ${labels}`,
-                '',
-                '| label | trigger |',
-                '|---|---|',
                 ...rows,
+                '',
+                '## Allowed labels',
+                '',
+                labels,
             ].join('\n');
         },
 

@@ -12,67 +12,70 @@
 
     const Sensor = {
         /**
-         * Current user action (primary) + one full prior round (previous user + assistant).
+         * PRIMARY: latest user message as an unresolved intended action.
+         * SECONDARY: the immediately preceding user/assistant round as context.
+         * A prior generated answer to the primary action is excluded during regenerate.
          */
         gather() {
             const ctx = window.NBS.getContext?.();
             const chat = Array.isArray(ctx?.chat) ? ctx.chat : (Array.isArray(window.chat) ? window.chat : []);
             const usable = chat.filter(m => m && typeof m.mes === 'string' && strip(m.mes) && !m.is_system);
 
-            let currentUser = '';
-            let lastUser = '';
-            let lastAssistant = '';
-
-            if (!usable.length) {
-                return { currentUser, lastUser, lastAssistant, text: Sensor.format('', '', '') };
-            }
-
-            let i = usable.length - 1;
-
-            // Prefer latest user as current action (normal generate path)
-            if (usable[i].is_user) {
-                currentUser = strip(usable[i].mes);
-                i -= 1;
-            } else {
-                // Regenerate / continue: tip is assistant — use prior user as current
-                lastAssistant = strip(usable[i].mes);
-                i -= 1;
-                while (i >= 0 && !usable[i].is_user) i -= 1;
-                if (i >= 0) {
-                    currentUser = strip(usable[i].mes);
-                    i -= 1;
+            let currentIndex = -1;
+            for (let i = usable.length - 1; i >= 0; i -= 1) {
+                if (usable[i].is_user) {
+                    currentIndex = i;
+                    break;
                 }
             }
 
-            // One full prior round: assistant then user walking backward
-            while (i >= 0 && usable[i].is_user) i -= 1;
-            if (i >= 0 && !usable[i].is_user) {
-                lastAssistant = strip(usable[i].mes);
-                i -= 1;
-            }
-            while (i >= 0 && !usable[i].is_user) i -= 1;
-            if (i >= 0 && usable[i].is_user) {
-                lastUser = strip(usable[i].mes);
+            if (currentIndex < 0) {
+                return {
+                    intendedAction: '',
+                    lastRound: { user: '', assistant: '' },
+                    text: Sensor.format({ user: '', assistant: '' }, ''),
+                };
             }
 
+            const intendedAction = strip(usable[currentIndex].mes);
+            const completedRounds = [];
+
+            for (let i = 0; i < currentIndex; i += 1) {
+                const message = usable[i];
+                const text = strip(message.mes);
+                if (message.is_user) {
+                    completedRounds.push({ user: text, assistant: '' });
+                    continue;
+                }
+
+                if (!completedRounds.length || completedRounds[completedRounds.length - 1].assistant) {
+                    completedRounds.push({ user: '', assistant: text });
+                } else {
+                    completedRounds[completedRounds.length - 1].assistant = text;
+                }
+            }
+
+            const lastRound = completedRounds[completedRounds.length - 1]
+                || { user: '', assistant: '' };
             return {
-                currentUser,
-                lastUser,
-                lastAssistant,
-                text: Sensor.format(currentUser, lastUser, lastAssistant),
+                intendedAction,
+                lastRound,
+                text: Sensor.format(lastRound, intendedAction),
             };
         },
 
-        format(currentUser, lastUser, lastAssistant) {
+        format(lastRound, intendedAction) {
             return [
-                '## CURRENT USER ACTION (primary)',
-                currentUser || '(empty)',
-                '',
-                '## LAST ROUND (context only)',
+                '## SECONDARY — LAST ROUND (CONTEXT)',
+                'Use this only to understand the scene surrounding the primary intention.',
                 '### Previous user',
-                lastUser || '(none)',
+                lastRound.user || '(none)',
                 '### Previous assistant',
-                lastAssistant || '(none)',
+                lastRound.assistant || '(none)',
+                '',
+                '## PRIMARY — USER INTENDED ACTION (UNRESOLVED)',
+                'This is the decision target. It has not succeeded, failed, or been resolved.',
+                intendedAction || '(empty)',
             ].join('\n');
         },
     };

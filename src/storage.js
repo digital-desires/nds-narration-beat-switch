@@ -3,6 +3,16 @@
 
     window.NBS = window.NBS || {};
 
+    const SAFE_FILENAME_RE = /^[a-z0-9][a-z0-9_-]*$/i;
+
+    function safeFilename(filename) {
+        const clean = String(filename || '');
+        if (!SAFE_FILENAME_RE.test(clean)) {
+            throw new Error('Invalid NarratorTools filename');
+        }
+        return encodeURIComponent(clean);
+    }
+
     const Storage = {
 
         // ── CSRF headers helper ───────────────────────────────────────────
@@ -37,7 +47,7 @@
             },
 
             async read(filename) {
-                const res = await fetch(`${Storage.NarratorTools.BASE_URL}/${filename}`);
+                const res = await fetch(`${Storage.NarratorTools.BASE_URL}/${safeFilename(filename)}`);
                 if (res.status === 404) return null;
                 if (!res.ok) throw new Error(`NarratorTools read failed: ${res.status}`);
                 return res.json();
@@ -45,7 +55,7 @@
 
             async write(filename, data) {
                 const headers = await Storage.getCsrfHeaders();
-                const res = await fetch(`${Storage.NarratorTools.BASE_URL}/${filename}`, {
+                const res = await fetch(`${Storage.NarratorTools.BASE_URL}/${safeFilename(filename)}`, {
                     method: 'PUT',
                     headers,
                     body: JSON.stringify(data, null, 2),
@@ -58,7 +68,7 @@
 
             async delete(filename) {
                 const headers = await Storage.getCsrfHeaders();
-                const res = await fetch(`${Storage.NarratorTools.BASE_URL}/${filename}`, {
+                const res = await fetch(`${Storage.NarratorTools.BASE_URL}/${safeFilename(filename)}`, {
                     method: 'DELETE',
                     headers,
                 });

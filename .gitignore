@@ -1,7 +1,4 @@
-# Local machine config for the desktop template editor (per-user paths)
-tools/.nbs_editor_config.json
-
-# Editor/OS cruft
+# Editor and OS files
 .vs/
 *.sqlite
 .DS_Store
@@ -9,5 +6,5 @@ Thumbs.db
 __pycache__/
 *.pyc
 
-# Scratch exports from the desktop editor
-tools/*.txt
+# Local release and archive artifacts
+dist/

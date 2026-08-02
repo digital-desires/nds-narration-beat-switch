@@ -1,5 +1,5 @@
 /**
- * NDS: Narration Beat Switch v0.2.0
+ * NDS: Narration Beat Switch v0.3.0
  * Classify beat → inject scene_directive capsule via {{getvar::nds_beat_style}}
  * Capsules come from user-editable templates (see library/default_templates.js)
  */
@@ -7,7 +7,7 @@
 (function () {
     'use strict';
 
-    const TARGET_VERSION = '0.2.0';
+    const TARGET_VERSION = '0.3.0';
     console.log(`[NBS ${TARGET_VERSION}] Loading…`);
 
     function getExtensionRoot() {

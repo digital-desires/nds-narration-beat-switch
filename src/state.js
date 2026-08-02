@@ -109,7 +109,7 @@
         normalizeLabel(label) {
             const T = window.NBS.Templates;
             const key = String(label || '').trim().toLowerCase();
-            if (!key || key === 'none' || !T.getLabelSet().has(key)) {
+            if (!key || !T.getLabelSet().has(key)) {
                 return T.getFallbackLabel();
             }
             return key;

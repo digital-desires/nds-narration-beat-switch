@@ -18,16 +18,14 @@
     // and parsed at boot by Templates.loadFactoryTemplates().
 
     window.NBS.DefaultTemplateFiles = [
-        'literary_prose.md',
         'gm_manual_ext.md',
         'dnd_mechanics.md',
-        'legacy_v1.md',
         'genre_chameleon.md',
     ];
 
     window.NBS.DefaultTemplates = {
         version: 1,
-        defaultActive: 'Literary Prose',
+        defaultActive: 'GM Manual Extended',
         templates: {},
         // Retired factory capsule sets, keyed by template name. A saved template
         // byte-identical to an entry here is purged so the new factory version
