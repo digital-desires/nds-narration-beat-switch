@@ -1,5 +1,5 @@
 /**
- * NDS: Narration Beat Switch v0.4.0
+ * NDS: Narration Beat Switch v0.4.1
  * Classify beat → inject scene_directive capsule via {{getvar::nds_beat_style}}
  * Capsules come from the .md files in library/templates/ — read fresh every
  * boot, no cache. Edit them with tools/nbs_template_editor.py.
@@ -8,7 +8,7 @@
 (function () {
     'use strict';
 
-    const TARGET_VERSION = '0.4.0';
+    const TARGET_VERSION = '0.4.1';
     console.log(`[NBS ${TARGET_VERSION}] Loading…`);
 
     function getExtensionRoot() {
@@ -58,10 +58,13 @@
         'src/ui.js',
     ];
 
+    // The ?v= query is what makes a version bump actually take effect: without
+    // it the browser happily serves the previous release's modules from cache
+    // after an update, and the extension runs a mix of old and new code.
     function loadModule(path) {
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = new URL(path, extensionRoot).href;
+            script.src = new URL(`${path}?v=${TARGET_VERSION}`, extensionRoot).href;
             script.onload = () => resolve();
             script.onerror = () => reject(new Error(`Failed to load ${path}`));
             document.head.appendChild(script);
@@ -70,8 +73,15 @@
 
     async function boot() {
         for (const path of modules) {
-            await loadModule(path);
-            console.log(`[NBS] Loaded ${path}`);
+            // A missing module must not kill the whole extension: after an
+            // update a stale cached bootstrap can ask for files that no longer
+            // exist. Warn and carry on — a degraded panel beats a dead one.
+            try {
+                await loadModule(path);
+                console.log(`[NBS] Loaded ${path}`);
+            } catch (err) {
+                console.warn(`[NBS] ${err.message} — continuing without it. If the extension misbehaves, reload with Ctrl+F5.`);
+            }
         }
 
         // The .md files in library/templates/ are the only source of truth.
