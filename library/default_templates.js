@@ -3,9 +3,9 @@
 
     window.NBS = window.NBS || {};
 
-    // Factory template registry. Each factory template is a plain-text .md
-    // file in library/templates/ using the same format the editor and the
-    // import box speak:
+    // Every template is a plain-text .md file in library/templates/, in the
+    // format the desktop editor (tools/nbs_template_editor.py) and the import
+    // box both speak:
     //
     //     # NBS Template: My Template
     //
@@ -13,32 +13,21 @@
     //     ...free-text instructions...
     //     </capsule>
     //
-    // To add a new factory template: drop the .md file in library/templates/
-    // and add its filename to DefaultTemplateFiles below. Files are fetched
-    // and parsed at boot by Templates.loadFactoryTemplates().
+    // These files are the ONLY source of truth. They are read fresh at every
+    // boot — nothing is cached, copied into settings, or protected from edits.
+    //
+    // The browser cannot list a directory over HTTP, so the filenames live in
+    // the array below. The desktop editor rewrites it whenever you add, rename
+    // or delete a template, so you should not need to touch it by hand.
 
     window.NBS.DefaultTemplateFiles = [
-        'gm_manual_ext.md',
         'dnd_mechanics.md',
         'genre_chameleon.md',
+        'gm_manual_ext.md',
     ];
 
-    window.NBS.DefaultTemplates = {
-        version: 1,
-        defaultActive: 'GM Manual Extended',
-        templates: {},
-        // Retired factory capsule sets, keyed by template name. A saved template
-        // byte-identical to an entry here is purged so the new factory version
-        // seeds in its place. Empty at v1.
-        legacyTemplates: {},
-    };
-
-    window.NBS.registerDefaultTemplate = function (name, template) {
-        if (!name || !template || !Array.isArray(template.capsules)) {
-            console.warn('[NBS] registerDefaultTemplate: invalid template', name);
-            return;
-        }
-        window.NBS.DefaultTemplates.templates[name] = template;
-        console.info(`[NBS] Factory template registered: "${name}" (${template.capsules.length} capsules)`);
-    };
+    // Which template is selected the first time, before the user picks one.
+    // Just a starting point — any template can be made active, and the choice
+    // is remembered in settings. Nothing here is special or immutable.
+    window.NBS.DefaultActiveTemplate = 'GM Manual Extended';
 })();

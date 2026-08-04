@@ -19,32 +19,62 @@ current user intention + previous round
 
 A capsule is a corrective lens, not a predetermined outcome. It can tell the narrator what to evaluate without forcing adversity, cost, escalation, failure, or a choice menu.
 
-## Included templates
+## Your templates are plain files
 
-Only three factory templates ship with the extension:
+**Every template is a `.md` file in `library/templates/`. One file per template. Those files are the only source of truth.**
+
+They are read fresh from disk every time SillyTavern loads. There is no cache, no copy inside SillyTavern's settings, no seeding and no "factory" template that resists being changed. Edit a file, reload the page, and you are running your version — including the default one.
+
+Three examples ship with the extension. They are examples, not fixtures:
 
 | Template | Capsules | Purpose |
 |---|---:|---|
-| **GM Manual Extended** | 21 | Per-beat adjudication and narration corrections without predetermined outcomes. This is the default. |
+| **GM Manual Extended** | 21 | Per-beat adjudication and narration corrections without predetermined outcomes. Selected first, until you pick another. |
 | **D&D Mechanics** | 9 | 5e-adjacent procedures adapted for narrated chat play. |
 | **Genre Chameleon** | 11 | A deliberately varied, semi-random genre showcase for the routing system. |
 
-You can create, edit, import, and export templates from the extension settings.
+Rewrite any of them, delete the ones you do not want, add your own, and make any template the active one. Nothing here is privileged. The three files above are a starting point and your taste is not required to match anyone else's.
 
-## Built-in template editor
+The format is plain text:
 
-Open **Extensions -> NDS: Narration Beat Switch -> Templates & Capsules** to edit the instruction system without touching JSON or extension code.
+```text
+# NBS Template: My Template
+
+<capsule label="combat" trigger="a fight is happening">
+Any instructions, any format. This is what gets injected.
+</capsule>
+
+<capsule label="generic" trigger="anything else">
+The fallback, used when no other capsule fits.
+</capsule>
+```
+
+## Desktop template editor
+
+A standalone editor ships with the extension at `tools/`. It reads and writes the same `.md` files the extension loads — there is no export/import round trip and no hidden storage in between.
+
+**Run it:**
+
+- **Windows** — double-click `tools/NBS Template Editor.bat`
+- **Any platform** — `python tools/nbs_template_editor.py`
+
+No installation and no dependencies: it uses only the Python 3.8+ standard library (tkinter). The `.bat` finds `python` or `py` automatically and tells you where to get Python if neither is present.
+
+![Desktop template editor](docs/screenshots/desktop-editor.png)
 
 The editor lets you:
 
-- select the active template or create a new one;
-- add, delete, and rename capsules;
-- edit each capsule's label, one-line classifier trigger, and full instruction body;
-- see warnings when a trigger exceeds 200 characters or a capsule body becomes unusually large;
-- use **Edit as text** to copy and revise a complete template;
-- paste a shared template into the text box, choose **Apply text**, review it, and then save it.
+- browse every template in `library/templates/` and open any of them;
+- add, delete, rename, and reorder capsules;
+- edit each capsule's label, one-line classifier trigger, and instruction body;
+- create a new template, or rename an existing one (the old file is removed, not orphaned);
+- delete a template, which deletes its file;
+- see warnings when a trigger runs long or a capsule body becomes unusually large;
+- open or export any template as text, for sharing.
 
-Changes stay in a draft until you press **Save template**. Without the optional disk-storage plugin, saved templates remain in normal SillyTavern extension settings.
+Save writes the `.md` file. Reload SillyTavern (F5) and the change is live.
+
+The extension's own settings panel — **Extensions -> NDS: Narration Beat Switch -> Templates & Capsules** — chooses which template is active and shows what is inside it. It is a viewer: the browser cannot write into the extension folder, so all editing happens in the desktop editor.
 
 ## Install from SillyTavern
 
@@ -100,12 +130,13 @@ style.css                   extension interface styles
 src/                        classifier, routing, injection, and UI
 lib/                        standalone/suite integration
 prompts/                    classifier instructions
-library/default_templates.js
-library/templates/          the three factory templates
+library/templates/          your templates — one .md per template
+library/default_templates.js  the filename list, kept in sync by the editor
+tools/                      desktop template editor (Python, no dependencies)
 presets/                    optional shareable completion preset
 ```
 
-No build step or server plugin is required for normal use.
+No build step and no server plugin — templates are read straight from `library/templates/`.
 
 ## Support NDS
 

@@ -1,9 +1,18 @@
+/**
+ * Templates — the .md files in library/templates/ ARE the templates.
+ *
+ * Read fresh at every boot. No settings copy, no JSON store, no seeding, no
+ * "factory vs user" split, nothing immutable. Edit a file (the desktop editor
+ * in tools/ does this), reload SillyTavern, it's live.
+ *
+ * Settings hold exactly one template-related value: activeTemplate, the name
+ * the user picked. Any template can be the active one.
+ */
 (function () {
     'use strict';
 
     window.NBS = window.NBS || {};
 
-    const DISK_FILE = 'nbs_templates';
     const FALLBACK_LABEL = 'generic';
     const LABEL_RE = /^[a-z][a-z0-9_-]*$/;
 
@@ -13,83 +22,39 @@
             : JSON.parse(JSON.stringify(obj));
     }
 
-    function factory() {
-        return window.NBS.DefaultTemplates || { version: 1, defaultActive: '', templates: {}, legacyTemplates: {} };
-    }
-
     const Templates = {
-        _normalized: false,
+        // name -> { capsules: [{label, trigger, body}], file }
+        _templates: {},
 
-        // ── Factory templates (plain-text .md files, fetched at boot) ─────
+        // ── Load from disk ────────────────────────────────────────────────
 
-        async loadFactoryTemplates() {
+        async loadFromDisk() {
             const files = window.NBS.DefaultTemplateFiles || [];
             const root = window.NBS_EXTENSION_ROOT;
-            if (!root) return;
+            const loaded = {};
+            if (!root) {
+                console.warn('[NBS] Extension root missing; cannot load templates');
+                this._templates = loaded;
+                return loaded;
+            }
             for (const filename of files) {
                 try {
                     const url = new URL(`library/templates/${filename}`, root).href;
                     const res = await fetch(url);
                     if (!res.ok) {
-                        console.warn(`[NBS] Factory template ${filename} not found (${res.status})`);
+                        console.warn(`[NBS] Template ${filename} not found (${res.status})`);
                         continue;
                     }
                     const { name, template } = this.importTemplateText(await res.text());
-                    window.NBS.registerDefaultTemplate(name, template);
+                    template.file = filename;
+                    loaded[name] = template;
+                    console.info(`[NBS] Template loaded: "${name}" (${template.capsules.length} capsules) from ${filename}`);
                 } catch (err) {
-                    console.warn(`[NBS] Failed to load factory template ${filename}:`, err.message);
+                    console.warn(`[NBS] Failed to load template ${filename}:`, err.message);
                 }
             }
-        },
-
-        // ── Normalization / seeding ───────────────────────────────────────
-
-        normalizeSettings(s, force = false) {
-            if (!s) return;
-            if (this._normalized && !force) return;
-            const fac = factory();
-
-            if (!s.templates || typeof s.templates !== 'object' || Array.isArray(s.templates)
-                || Object.keys(s.templates).length === 0) {
-                s.templates = clone(fac.templates);
-            }
-
-            this._purgeLegacyTemplates(s.templates);
-
-            // Non-destructive seed: fill in factory templates that are missing,
-            // never overwrite existing (possibly user-edited) names.
-            for (const [name, tpl] of Object.entries(fac.templates)) {
-                if (!s.templates[name]) s.templates[name] = clone(tpl);
-            }
-
-            for (const name of Object.keys(s.templates)) {
-                s.templates[name] = this.normalizeTemplate(s.templates[name]);
-            }
-
-            if (!s.activeTemplate || !s.templates[s.activeTemplate]) {
-                s.activeTemplate = s.templates[fac.defaultActive]
-                    ? fac.defaultActive
-                    : Object.keys(s.templates)[0];
-            }
-            if (!Number.isFinite(s.templatesVersion)) s.templatesVersion = fac.version || 1;
-
-            // Only latch once the factory set has actually loaded (async .md
-            // fetch) so an early caller doesn't freeze an unseeded state.
-            this._normalized = Object.keys(fac.templates).length > 0;
-        },
-
-        // Deletes saved templates byte-identical to a retired factory set so the
-        // current factory version seeds in their place; user edits survive.
-        _purgeLegacyTemplates(templates) {
-            const legacy = factory().legacyTemplates || {};
-            for (const [name, oldTpl] of Object.entries(legacy)) {
-                const saved = templates[name];
-                if (!saved) continue;
-                if (JSON.stringify(saved.capsules) === JSON.stringify(oldTpl.capsules)) {
-                    delete templates[name];
-                    console.info(`[NBS] Purged legacy factory template "${name}" (untouched old default)`);
-                }
-            }
+            this._templates = loaded;
+            return loaded;
         },
 
         normalizeTemplate(tpl) {
@@ -106,36 +71,47 @@
                     body: String(cap?.body || ''),
                 });
             }
-            if (!seen.has(FALLBACK_LABEL)) {
-                out.capsules.push(this._factoryGenericCapsule());
-            }
+            if (!seen.has(FALLBACK_LABEL)) out.capsules.push(this._fallbackCapsule());
             return out;
         },
 
-        _factoryGenericCapsule() {
-            const fac = factory();
-            for (const tpl of Object.values(fac.templates || {})) {
+        _fallbackCapsule() {
+            for (const tpl of Object.values(this._templates)) {
                 const cap = (tpl.capsules || []).find(c => c.label === FALLBACK_LABEL);
                 if (cap) return clone(cap);
             }
-            return { label: FALLBACK_LABEL, trigger: 'anything else', body: 'Write clear, grounded narration that advances the immediate moment and closes on something the player can act on.' };
+            return {
+                label: FALLBACK_LABEL,
+                trigger: 'anything else',
+                body: 'Write clear, grounded narration that advances the immediate moment and closes on something the player can act on.',
+            };
         },
 
         // ── Accessors ─────────────────────────────────────────────────────
 
-        _settings() {
-            const s = window.NBS.State.getSettings();
-            this.normalizeSettings(s);
-            return s;
+        getTemplateNames() {
+            return Object.keys(this._templates).sort((a, b) => a.localeCompare(b));
         },
 
         getActiveTemplateName() {
-            return this._settings().activeTemplate;
+            const s = window.NBS.State.getSettings();
+            if (s.activeTemplate && this._templates[s.activeTemplate]) return s.activeTemplate;
+            // Preferred default, else whatever loaded first — never an error.
+            const preferred = window.NBS.DefaultActiveTemplate;
+            if (preferred && this._templates[preferred]) return preferred;
+            return this.getTemplateNames()[0] || '';
         },
 
         getActiveTemplate() {
-            const s = this._settings();
-            return s.templates[s.activeTemplate];
+            return this._templates[this.getActiveTemplateName()] || null;
+        },
+
+        setActiveTemplate(name) {
+            if (!this._templates[name]) return false;
+            const s = window.NBS.State.getSettings();
+            s.activeTemplate = name;
+            window.NBS.State.saveSettings();
+            return true;
         },
 
         getLabelSet(tpl) {
@@ -148,6 +124,21 @@
             const caps = tpl?.capsules || [];
             if (caps.some(c => c.label === FALLBACK_LABEL)) return FALLBACK_LABEL;
             return caps[0]?.label || FALLBACK_LABEL;
+        },
+
+        // Capsule bodies may use {{user}}, {{char}} and friends. They reach the
+        // prompt through {{getvar::nds_beat_style}}, and SillyTavern's macro pass
+        // does not re-scan a variable's value — so expand them here, or they
+        // arrive at the model as a literal {{user}}.
+        _substitute(text) {
+            try {
+                const fn = window.substituteParams
+                    || window.NBS.getContext?.()?.substituteParams;
+                if (typeof fn === 'function') return fn(text);
+            } catch (err) {
+                console.warn('[NBS] macro substitution failed:', err.message);
+            }
+            return text;
         },
 
         getCapsuleBody(tpl, label) {
@@ -167,7 +158,8 @@
                 + 'prevent mode-specific distortions without predetermining the outcome. In the '
                 + 'Narrator pass, RENDER only the context-supported result and keep hidden reasoning '
                 + 'off-page. The directive is binding as a corrective lens, never as a plot outcome.';
-            return `<scene_directive name="${cap.label}">\n${header}\n\n${cap.body.trim()}\n</scene_directive>`;
+            const body = this._substitute(cap.body.trim());
+            return `<scene_directive name="${cap.label}">\n${header}\n\n${body}\n</scene_directive>`;
         },
 
         isValidLabel(label) {
@@ -182,64 +174,13 @@
             const cleanTrigger = (t) => String(t || '').replace(/[|\r\n]+/g, ' ').trim();
 
             const labels = caps.map(c => c.label).join(', ');
-            const rows = caps.map(c => {
-                return `${c.label}: ${cleanTrigger(c.trigger) || 'no description provided'}`;
-            });
+            const rows = caps.map(c =>
+                `${c.label}: ${cleanTrigger(c.trigger) || 'no description provided'}`);
 
-            return [
-                '## Labels',
-                '',
-                ...rows,
-                '',
-                '## Allowed labels',
-                '',
-                labels,
-            ].join('\n');
+            return ['## Labels', '', ...rows, '', '## Allowed labels', '', labels].join('\n');
         },
 
-        // ── Disk sync (narrator-tools-storage plugin) ─────────────────────
-
-        async loadTemplatesFromDisk() {
-            try {
-                const data = await window.NBS.Storage.NarratorTools.read(DISK_FILE);
-                if (!data || typeof data !== 'object' || !data.templates) return false;
-                const s = this._settings();
-                Object.assign(s.templates, data.templates);
-                this._purgeLegacyTemplates(s.templates);
-                for (const name of Object.keys(s.templates)) {
-                    s.templates[name] = this.normalizeTemplate(s.templates[name]);
-                }
-                if (data.activeTemplate && s.templates[data.activeTemplate]) {
-                    s.activeTemplate = data.activeTemplate;
-                }
-                if (!s.templates[s.activeTemplate]) {
-                    s.activeTemplate = Object.keys(s.templates)[0];
-                }
-                window.NBS.State.saveSettings();
-                console.info(`[NBS] Loaded templates from disk (${Object.keys(s.templates).length} total)`);
-                return true;
-            } catch (err) {
-                console.warn('[NBS] loadTemplatesFromDisk failed (session-only persistence):', err.message);
-                return false;
-            }
-        },
-
-        async saveTemplatesToDisk() {
-            try {
-                const s = this._settings();
-                await window.NBS.Storage.NarratorTools.write(DISK_FILE, {
-                    version: s.templatesVersion || 1,
-                    templates: s.templates,
-                    activeTemplate: s.activeTemplate,
-                });
-                return true;
-            } catch (err) {
-                console.warn('[NBS] saveTemplatesToDisk failed (templates kept in ST settings only):', err.message);
-                return false;
-            }
-        },
-
-        // ── Import / export ───────────────────────────────────────────────
+        // ── Text form (used by the loader, the viewer and Copy) ───────────
 
         serializeTemplate(name, tpl) {
             if (!tpl) return '';
@@ -250,7 +191,7 @@
         },
 
         exportTemplate(name) {
-            return this.serializeTemplate(name, this._settings().templates[name]);
+            return this.serializeTemplate(name, this._templates[name]);
         },
 
         // Returns { name, template } or throws with a readable message.
@@ -274,7 +215,7 @@
             }
 
             if (!capsules.length) {
-                // Legacy path: old <prose_style name="x"> blocks (wrapper stripped, triggers empty).
+                // Legacy path: old <prose_style name="x"> blocks.
                 const legacy = window.NBS.State.parseCapsules(raw);
                 for (const [label, block] of legacy) {
                     const body = block

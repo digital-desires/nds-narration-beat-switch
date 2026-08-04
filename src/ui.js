@@ -39,34 +39,29 @@
                         <hr>
                         <div class="nbs-templates">
                             <b>Templates &amp; Capsules</b>
-                            <div class="nbs-hint">A template is a full set of styles. The classifier only sees the capsules of the active template.</div>
-                            <div class="nbs-field"><label>Template</label>
+                            <div class="nbs-hint">A template is a full set of styles. The classifier only sees the capsules of the active template. Pick which one is active here; edit them in the desktop editor.</div>
+                            <div class="nbs-field"><label>Active template</label>
                                 <div class="nbs-row-inline">
                                     <select id="nbs-template-select" class="text_pole"></select>
-                                    <button id="nbs-template-load" class="menu_button" title="Reload saved template (discard changes)"><i class="fa-solid fa-rotate-left"></i></button>
-                                    <button id="nbs-template-new" class="menu_button" title="New template"><i class="fa-solid fa-plus"></i></button>
-                                    <button id="nbs-template-delete" class="menu_button" title="Delete template"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </div>
-                            <div id="nbs-template-dirty" class="nbs-dirty-banner" hidden>Unsaved changes — press "Save template" to apply.</div>
-                            <div id="nbs-template-name-row" class="nbs-field" hidden><label>Template name (typing a new name saves a copy)</label><input id="nbs-template-name" class="text_pole" type="text" placeholder="My template"></div>
                             <div class="nbs-field"><label>Capsule</label>
                                 <div class="nbs-row-inline">
                                     <select id="nbs-capsule-select" class="text_pole"></select>
-                                    <button id="nbs-capsule-add" class="menu_button" title="Add capsule"><i class="fa-solid fa-plus"></i></button>
-                                    <button id="nbs-capsule-delete" class="menu_button" title="Delete capsule"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </div>
-                            <div class="nbs-field"><label>Label <span class="nbs-hint-inline">(lowercase: a-z, 0-9, -, _)</span></label><input id="nbs-capsule-label" class="text_pole" type="text"></div>
-                            <div class="nbs-field"><label>Trigger <span class="nbs-hint-inline">(one line — tells the classifier when to pick this style)</span> <span id="nbs-trigger-count"></span></label><input id="nbs-capsule-trigger" class="text_pole" type="text"></div>
-                            <div class="nbs-field"><label>Body <span class="nbs-hint-inline">(free text — any style or rule instructions; no required format)</span> <span id="nbs-body-count"></span></label><textarea id="nbs-capsule-body" class="text_pole" rows="12"></textarea></div>
+                            <div class="nbs-field"><label>Label</label><input id="nbs-capsule-label" class="text_pole" type="text" readonly></div>
+                            <div class="nbs-field"><label>Trigger <span class="nbs-hint-inline">(tells the classifier when to pick this style)</span> <span id="nbs-trigger-count"></span></label><input id="nbs-capsule-trigger" class="text_pole" type="text" readonly></div>
+                            <div class="nbs-field"><label>Body <span class="nbs-hint-inline">(the instructions injected into the prompt)</span> <span id="nbs-body-count"></span></label><textarea id="nbs-capsule-body" class="text_pole" rows="12" readonly></textarea></div>
                             <div class="nbs-row-inline">
-                                <button id="nbs-template-save" class="menu_button">Save template</button>
-                                <button id="nbs-export-btn" class="menu_button">Edit as text</button>
-                                <button id="nbs-import-btn" class="menu_button">Apply text</button>
+                                <button id="nbs-copy-btn" class="menu_button">Copy as text</button>
                             </div>
-                            <div class="nbs-hint">Whole-template text editing: "Edit as text" writes the current template below — edit it (or paste your own / old &lt;prose_style&gt; blocks) and press "Apply text", then Save. Format: <code># NBS Template: Name</code> then one <code>&lt;capsule label="x" trigger="when to pick it"&gt;instructions&lt;/capsule&gt;</code> per style.</div>
-                            <textarea id="nbs-io-textarea" class="text_pole" rows="6" placeholder="# NBS Template: My Template&#10;&#10;<capsule label=&quot;combat&quot; trigger=&quot;a fight is happening&quot;>&#10;Any instructions, any format.&#10;</capsule>&#10;&#10;<capsule label=&quot;generic&quot; trigger=&quot;anything else&quot;>&#10;Default narration instructions.&#10;</capsule>"></textarea>
+                            <div class="nbs-hint">
+                                Templates are plain <code>.md</code> files in <code>library/templates/</code> — one file per template, read fresh every time SillyTavern loads. Nothing is cached and nothing is protected: edit any of them, including the default.
+                                <br><br>
+                                To edit: run <code>tools/NBS Template Editor.bat</code> (or <code>python tools/nbs_template_editor.py</code>), make your changes, then reload this page (F5).
+                            </div>
+                            <textarea id="nbs-io-textarea" class="text_pole" rows="6" readonly hidden></textarea>
                         </div>
                         <hr>
                         <div class="nbs-settings-row">
@@ -83,85 +78,68 @@
             UI.syncSettingsUi();
         },
 
-        // ── Template editor (draft-based: keystrokes never touch settings) ──
+        // ── Template picker + read-only viewer ────────────────────────────
+        // Templates are .md files in library/templates/ and the browser cannot
+        // write there. Editing lives in the desktop editor (tools/); this panel
+        // chooses which template is active and shows what is in it.
 
-        _draft: null,
-        _draftSourceName: null,
-        _isCreatingNew: false,
-        _dirty: false,
+        _viewName: null,
         _capIdx: 0,
-
-        _clone(obj) {
-            return typeof structuredClone === 'function' ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
-        },
 
         _toast(msg, type = 'info') {
             if (window.toastr?.[type]) window.toastr[type](msg, 'Beat Switch');
             else console.log(`[NBS] ${type}: ${msg}`);
         },
 
-        _confirmDiscard() {
-            if (!UI._dirty) return true;
-            return window.confirm('Discard unsaved template changes?');
-        },
-
-        _setDirty(on) {
-            UI._dirty = !!on;
-            const banner = document.getElementById('nbs-template-dirty');
-            if (banner) banner.hidden = !UI._dirty;
-            const nameRow = document.getElementById('nbs-template-name-row');
-            if (nameRow) nameRow.hidden = !(UI._dirty || UI._isCreatingNew);
-        },
-
         loadTemplateIntoDraft(name) {
-            const s = window.NBS.State.getSettings();
-            const tpl = s.templates?.[name];
-            if (!tpl) return;
-            UI._draft = UI._clone(tpl);
-            UI._draftSourceName = name;
-            UI._isCreatingNew = false;
+            const T = window.NBS.Templates;
+            if (!T._templates[name]) name = T.getActiveTemplateName();
+            UI._viewName = name;
             UI._capIdx = 0;
-            UI._setDirty(false);
-            const nameInput = document.getElementById('nbs-template-name');
-            if (nameInput) nameInput.value = name;
             UI.renderTemplateSelect();
             UI.renderCapsuleSelect();
             UI.renderCapsuleFields();
         },
 
+        _viewTemplate() {
+            return window.NBS.Templates._templates[UI._viewName] || null;
+        },
+
         renderTemplateSelect() {
             const sel = document.getElementById('nbs-template-select');
             if (!sel) return;
-            const s = window.NBS.State.getSettings();
+            const T = window.NBS.Templates;
+            const active = T.getActiveTemplateName();
             sel.innerHTML = '';
-            for (const name of Object.keys(s.templates || {})) {
+            for (const name of T.getTemplateNames()) {
                 const opt = document.createElement('option');
                 opt.value = name;
-                opt.textContent = name === s.activeTemplate ? `${name} (active)` : name;
+                const file = T._templates[name]?.file;
+                opt.textContent = name === active ? `${name} (active)` : name;
+                if (file) opt.title = `library/templates/${file}`;
                 sel.appendChild(opt);
             }
-            if (UI._draftSourceName && s.templates[UI._draftSourceName]) {
-                sel.value = UI._draftSourceName;
-            }
+            if (UI._viewName && T._templates[UI._viewName]) sel.value = UI._viewName;
         },
 
         renderCapsuleSelect() {
             const sel = document.getElementById('nbs-capsule-select');
-            if (!sel || !UI._draft) return;
+            const tpl = UI._viewTemplate();
+            if (!sel || !tpl) return;
             sel.innerHTML = '';
-            UI._draft.capsules.forEach((cap, i) => {
+            tpl.capsules.forEach((cap, i) => {
                 const opt = document.createElement('option');
                 opt.value = String(i);
                 opt.textContent = cap.label || `(capsule ${i + 1})`;
                 sel.appendChild(opt);
             });
-            if (UI._capIdx >= UI._draft.capsules.length) UI._capIdx = 0;
+            if (UI._capIdx >= tpl.capsules.length) UI._capIdx = 0;
             sel.value = String(UI._capIdx);
         },
 
         renderCapsuleFields() {
-            if (!UI._draft) return;
-            const cap = UI._draft.capsules[UI._capIdx];
+            const tpl = UI._viewTemplate();
+            const cap = tpl?.capsules?.[UI._capIdx];
             if (!cap) return;
             const el = (id) => document.getElementById(id);
             if (el('nbs-capsule-label')) el('nbs-capsule-label').value = cap.label || '';
@@ -171,7 +149,7 @@
         },
 
         updateCounters() {
-            const cap = UI._draft?.capsules?.[UI._capIdx];
+            const cap = UI._viewTemplate()?.capsules?.[UI._capIdx];
             const trig = document.getElementById('nbs-trigger-count');
             const body = document.getElementById('nbs-body-count');
             if (trig) {
@@ -186,112 +164,17 @@
             }
         },
 
-        async _persistTemplates() {
-            window.NBS.State.saveSettings();
-            const ok = await window.NBS.Templates.saveTemplatesToDisk();
-            if (!ok) UI._toast('Disk sync unavailable — templates saved in SillyTavern settings only.', 'warning');
-        },
-
         bindTemplateUi() {
             const el = (id) => document.getElementById(id);
             const T = window.NBS.Templates;
 
-            el('nbs-template-select')?.addEventListener('change', async function () {
-                if (!UI._confirmDiscard()) {
-                    this.value = UI._draftSourceName || window.NBS.State.getSettings().activeTemplate;
-                    return;
-                }
-                const s = window.NBS.State.getSettings();
-                if (!s.templates[this.value]) return;
-                s.activeTemplate = this.value;
+            // Choosing a template only records which one is active. The
+            // template files themselves are never written from the browser.
+            el('nbs-template-select')?.addEventListener('change', function () {
+                if (!T.setActiveTemplate(this.value)) return;
                 UI.loadTemplateIntoDraft(this.value);
-                await UI._persistTemplates();
                 UI.refreshStatus();
-            });
-
-            el('nbs-template-load')?.addEventListener('click', () => {
-                if (!UI._confirmDiscard()) return;
-                const sel = el('nbs-template-select');
-                UI.loadTemplateIntoDraft(sel?.value || window.NBS.State.getSettings().activeTemplate);
-            });
-
-            el('nbs-template-new')?.addEventListener('click', () => {
-                if (!UI._confirmDiscard()) return;
-                UI._draft = { capsules: [UI._clone(T._factoryGenericCapsule())] };
-                UI._draftSourceName = null;
-                UI._isCreatingNew = true;
-                UI._capIdx = 0;
-                const nameInput = el('nbs-template-name');
-                if (nameInput) nameInput.value = '';
-                UI._setDirty(true);
-                UI.renderCapsuleSelect();
-                UI.renderCapsuleFields();
-                nameInput?.focus();
-            });
-
-            el('nbs-template-delete')?.addEventListener('click', async () => {
-                const s = window.NBS.State.getSettings();
-                const sel = el('nbs-template-select');
-                const name = sel?.value;
-                if (!name || !s.templates[name]) return;
-                if (Object.keys(s.templates).length <= 1) {
-                    UI._toast('Cannot delete the last template.', 'warning');
-                    return;
-                }
-                if (!window.confirm(`Delete template "${name}"? This cannot be undone.`)) return;
-                delete s.templates[name];
-                if (s.activeTemplate === name) {
-                    s.activeTemplate = Object.keys(s.templates)[0];
-                }
-                UI.loadTemplateIntoDraft(s.activeTemplate);
-                await UI._persistTemplates();
-                UI.refreshStatus();
-                UI._toast(`Deleted "${name}".`);
-            });
-
-            el('nbs-template-save')?.addEventListener('click', async () => {
-                if (!UI._draft) return;
-                const s = window.NBS.State.getSettings();
-                const typed = (el('nbs-template-name')?.value || '').trim();
-                const name = typed || UI._draftSourceName;
-                if (!name) {
-                    UI._toast('Give the template a name first.', 'warning');
-                    return;
-                }
-                // Validate capsules before normalization eats bad entries silently.
-                const seen = new Set();
-                for (const cap of UI._draft.capsules) {
-                    const label = String(cap.label || '').trim().toLowerCase();
-                    if (label === 'none') {
-                        UI._toast('"none" is a reserved label — pick another.', 'error');
-                        return;
-                    }
-                    if (!T.isValidLabel(label)) {
-                        UI._toast(`Invalid label "${cap.label}" — use lowercase letters, digits, - and _.`, 'error');
-                        return;
-                    }
-                    if (seen.has(label)) {
-                        UI._toast(`Duplicate label "${label}" — labels must be unique.`, 'error');
-                        return;
-                    }
-                    seen.add(label);
-                }
-                const normalized = T.normalizeTemplate(UI._draft);
-                if (!seen.has('generic')) {
-                    UI._toast('No "generic" capsule — a fallback one was added automatically.');
-                }
-                s.templates[name] = normalized;
-                s.activeTemplate = name;
-                UI._draftSourceName = name;
-                UI._isCreatingNew = false;
-                UI._draft = UI._clone(normalized);
-                UI._setDirty(false);
-                UI.renderTemplateSelect();
-                UI.renderCapsuleSelect();
-                UI.renderCapsuleFields();
-                await UI._persistTemplates();
-                UI.refreshStatus();
-                UI._toast(`Saved "${name}" (${normalized.capsules.length} capsules).`, 'success');
+                UI._toast(`Active template: ${this.value}`, 'success');
             });
 
             el('nbs-capsule-select')?.addEventListener('change', function () {
@@ -299,88 +182,15 @@
                 UI.renderCapsuleFields();
             });
 
-            el('nbs-capsule-add')?.addEventListener('click', () => {
-                if (!UI._draft) return;
-                let n = UI._draft.capsules.length + 1;
-                while (UI._draft.capsules.some(c => c.label === `new-capsule-${n}`)) n += 1;
-                UI._draft.capsules.push({ label: `new-capsule-${n}`, trigger: '', body: '' });
-                UI._capIdx = UI._draft.capsules.length - 1;
-                UI._setDirty(true);
-                UI.renderCapsuleSelect();
-                UI.renderCapsuleFields();
-            });
-
-            el('nbs-capsule-delete')?.addEventListener('click', () => {
-                if (!UI._draft) return;
-                if (UI._draft.capsules.length <= 1) {
-                    UI._toast('A template needs at least one capsule.', 'warning');
-                    return;
-                }
-                const cap = UI._draft.capsules[UI._capIdx];
-                if (!window.confirm(`Delete capsule "${cap?.label}"?`)) return;
-                UI._draft.capsules.splice(UI._capIdx, 1);
-                UI._capIdx = 0;
-                UI._setDirty(true);
-                UI.renderCapsuleSelect();
-                UI.renderCapsuleFields();
-            });
-
-            el('nbs-capsule-label')?.addEventListener('input', function () {
-                const cap = UI._draft?.capsules?.[UI._capIdx];
-                if (!cap) return;
-                cap.label = this.value.trim().toLowerCase();
-                UI._setDirty(true);
-                const opt = el('nbs-capsule-select')?.options?.[UI._capIdx];
-                if (opt) opt.textContent = cap.label || `(capsule ${UI._capIdx + 1})`;
-            });
-
-            el('nbs-capsule-trigger')?.addEventListener('input', function () {
-                const cap = UI._draft?.capsules?.[UI._capIdx];
-                if (!cap) return;
-                cap.trigger = this.value;
-                UI._setDirty(true);
-                UI.updateCounters();
-            });
-
-            el('nbs-capsule-body')?.addEventListener('input', function () {
-                const cap = UI._draft?.capsules?.[UI._capIdx];
-                if (!cap) return;
-                cap.body = this.value;
-                UI._setDirty(true);
-                UI.updateCounters();
-            });
-
-            el('nbs-export-btn')?.addEventListener('click', () => {
-                if (!UI._draft) return;
-                const name = (el('nbs-template-name')?.value || '').trim()
-                    || UI._draftSourceName || 'Unnamed template';
-                const text = T.serializeTemplate(name, UI._draft);
+            el('nbs-copy-btn')?.addEventListener('click', () => {
+                const name = UI._viewName;
+                const text = T.exportTemplate(name);
+                if (!text) return;
                 const io = el('nbs-io-textarea');
-                if (io) io.value = text;
+                if (io) { io.hidden = false; io.value = text; }
                 navigator.clipboard?.writeText(text)
                     .then(() => UI._toast('Template copied to clipboard.'))
                     .catch(() => { /* textarea still holds it */ });
-            });
-
-            el('nbs-import-btn')?.addEventListener('click', () => {
-                const io = el('nbs-io-textarea');
-                if (!io) return;
-                if (!UI._confirmDiscard()) return;
-                try {
-                    const { name, template } = T.importTemplateText(io.value);
-                    UI._draft = template;
-                    UI._draftSourceName = null;
-                    UI._isCreatingNew = true;
-                    UI._capIdx = 0;
-                    const nameInput = el('nbs-template-name');
-                    if (nameInput) nameInput.value = name;
-                    UI._setDirty(true);
-                    UI.renderCapsuleSelect();
-                    UI.renderCapsuleFields();
-                    UI._toast(`Imported "${name}" (${template.capsules.length} capsules) — review and Save.`, 'success');
-                } catch (err) {
-                    UI._toast(err.message, 'error');
-                }
             });
         },
 

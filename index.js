@@ -1,13 +1,14 @@
 /**
- * NDS: Narration Beat Switch v0.3.0
+ * NDS: Narration Beat Switch v0.4.0
  * Classify beat → inject scene_directive capsule via {{getvar::nds_beat_style}}
- * Capsules come from user-editable templates (see library/default_templates.js)
+ * Capsules come from the .md files in library/templates/ — read fresh every
+ * boot, no cache. Edit them with tools/nbs_template_editor.py.
  */
 
 (function () {
     'use strict';
 
-    const TARGET_VERSION = '0.3.0';
+    const TARGET_VERSION = '0.4.0';
     console.log(`[NBS ${TARGET_VERSION}] Loading…`);
 
     function getExtensionRoot() {
@@ -48,7 +49,6 @@
     const modules = [
         'lib/nds_dual_mode.js',
         'library/default_templates.js',
-        'src/storage.js',
         'src/state.js',
         'src/templates.js',
         'src/api.js',
@@ -74,10 +74,9 @@
             console.log(`[NBS] Loaded ${path}`);
         }
 
-        await window.NBS.Templates.loadFactoryTemplates();
-        const settings = window.NBS.State.getSettings();
-        window.NBS.Templates.normalizeSettings(settings);
-        await window.NBS.Templates.loadTemplatesFromDisk();
+        // The .md files in library/templates/ are the only source of truth.
+        // Read fresh every boot — no cache, no settings copy, no seeding.
+        await window.NBS.Templates.loadFromDisk();
         const ok = await window.NBS.State.loadAll();
         if (!ok) {
             console.warn('[NBS] Not ready — missing soul/skill/format md or empty template');
