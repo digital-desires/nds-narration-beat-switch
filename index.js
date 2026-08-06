@@ -1,5 +1,5 @@
 /**
- * NDS: Narration Beat Switch v0.4.2
+ * NDS: Narration Beat Switch v0.4.3
  * Classify beat → inject scene_directive capsule via {{getvar::nds_beat_style}}
  * Capsules come from the .md files in library/templates/ — read fresh every
  * boot, no cache. Edit them with tools/nbs_template_editor.py.
@@ -8,7 +8,7 @@
 (function () {
     'use strict';
 
-    const TARGET_VERSION = '0.4.2';
+    const TARGET_VERSION = '0.4.3';
     console.log(`[NBS ${TARGET_VERSION}] Loading…`);
 
     function getExtensionRoot() {

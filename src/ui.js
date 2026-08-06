@@ -266,10 +266,10 @@
                 ? `Last label: ${label} · API: ${cfg.source || '?'} · Error: ${err}`
                 : `Last label: ${label} · API: ${cfg.source || '?'} · template: ${tplName} (${capCount} capsules)`;
 
-            // Keep Control button title in sync with last label
-            if (UI._toolbarRegistered && window.STUnifiedToolbar?.register) {
-                UI.registerUnifiedToolbarButtons();
-            }
+            // Control reads action.title as a function, so a re-render is enough to
+            // show the new label — no re-registration. The standalone shell picks it
+            // up on its next render (opening the panel, or any button click).
+            window.STUnifiedToolbar?.update?.();
         },
 
         setEnabled(on) {
@@ -282,8 +282,10 @@
         },
 
         getToolbarActions() {
-            const label = window.NBS.State.lastLabel;
-            const title = label ? `Beat Switch (${label})` : 'Beat Switch';
+            // Getters, not values: these actions are registered once at boot, and the
+            // label only exists after the first classification.
+            const label = () => window.NBS.State.lastLabel;
+            const title = () => (label() ? `Beat Switch (${label()})` : 'Beat Switch');
             return [
                 {
                     id: 'nbs-power',
@@ -304,7 +306,7 @@
                     group: 'nbs',
                     groupLabel: 'Beat Style',
                     groupIcon: 'fa-feather-pointed',
-                    title: label ? `Last: ${label}` : 'Last: —',
+                    title: () => `Last: ${label() || '—'}`,
                     icon: 'fa-tag',
                     secondary: true,
                     visible: () => !!window.NBS.State.getSettings().enabled,
