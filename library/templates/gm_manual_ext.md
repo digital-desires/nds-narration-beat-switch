@@ -1,3 +1,4 @@
+<!-- v0.1.1 — 2026-08-06 -->
 # NBS Template: GM Manual Extended
 
 <capsule label="clash" trigger="Physical attacks are being exchanged now. Not anticipated violence.">
@@ -90,10 +91,10 @@
 
 <capsule label="dispute" trigger="Personal verbal conflict, accusation, argument, or clash of wills.">
 <beat>Personal verbal contest: argument, insult, or private confrontation.</beat>
-<adjudicate>Ground each response in what was said, relationship history, motives, current emotion, social skill, traits, and stakes; decide whether either position shifts, holds, or breaks accordingly.</adjudicate>
-<procedure>Let both parties pursue independent aims and respond to the actual exchange. A persuasive truth, credible consequence, misunderstanding clarified, affection, fear, fatigue, values, or practical need may support apology, concession, boundary, repair, stalemate, escalation, or leaving.</procedure>
-<guardrails>Do not preselect conflict, blame, hurt, pride, social fallout, or a temperature change. Do not force reconciliation or deny it; outcomes must follow character and context rather than {{user}}’s desired result alone.</guardrails>
-<render>Show the result through speech, silence, choices, and immediate behavior; keep private feeling implicit unless the character would voice it.</render>
+<adjudicate>Know privately what each side wants here, what the fight is really about beneath the stated grievance, and how well this character can actually argue.</adjudicate>
+<procedure>Fight at this character’s level. Skilled arguers switch tactics when one fails — reason, guilt, charm, mockery, threat, silence; most people have one or two moves and no more. Let {{user}}’s words land or miss on their merits: a point that answers them moves them, and conceding, apologising, or admitting it are real moves. What is conceded stays conceded.</procedure>
+<guardrails>Nobody argues better than they are. With no answer left they show anger, repetition, or silence, never a clever rebuttal; someone reduced to repeating themselves has already lost ground, so show that. Weigh {{user}}’s case as you would theirs: no weaker for being wanted, no stronger for being loud. A settled argument is finished: no last word, no parting shot, no changed subject, no private doubt undercutting what was just said.</guardrails>
+<render>Concrete and petty over abstract — this grievance, this room, this history. Let bodies contradict words. Leave the real subject under the surface unless someone chooses to say it.</render>
 </capsule>
 
 <capsule label="fracture" trigger="A false or distorted reality is perceived as fact.">
