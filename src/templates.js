@@ -147,19 +147,27 @@
             const cap = caps.find(c => c.label === label)
                 || caps.find(c => c.label === this.getFallbackLabel(tpl));
             if (!cap) return '';
+            // The header used to frame this as a two-pass procedure — "In the Referee
+            // pass… In the Narrator pass… keep hidden reasoning off-page." That is the
+            // same Two Hats fiction that was cut from gm_core: the model cannot run
+            // passes, and telling it to hide knowledge from itself makes it hesitant.
+            // It survived here because this repo is separate from the preset. The
+            // header now says what the four tags are, in one voice, without pretending
+            // there are two of them.
             const header =
-                'This is the active per-beat corrective directive. It supplements the complete '
-                + 'narrator prompt; established character definitions, world state, stats, '
-                + 'abilities, relationships, and mechanics remain authoritative. The user message '
-                + 'states an unresolved intention, not its result. In the Referee pass, use '
-                + 'ADJUDICATE and PROCEDURE to evaluate that intention through the full context. '
-                + 'Friction means checking relevant constraints and independent agents; it never '
-                + 'requires adversity, cost, escalation, failure, or a changed state. GUARDRAILS '
-                + 'prevent mode-specific distortions without predetermining the outcome. In the '
-                + 'Narrator pass, RENDER only the context-supported result and keep hidden reasoning '
-                + 'off-page. The directive is binding as a corrective lens, never as a plot outcome.';
+                'This is the beat sub-skill for the current moment: what kind of moment this is, '
+                + 'and how a moment of this kind is narrated. It configures narration only. '
+                + 'Established character definitions, world state, stats, abilities, relationships '
+                + 'and mechanics stay authoritative, and nothing here overrides them. The player\'s '
+                + 'message states an intention, not its result. ADJUDICATE is what to settle before '
+                + 'writing. PROCEDURE is how a moment of this kind actually plays out. GUARDRAILS '
+                + 'are the distortions this kind of moment invites, and what to do instead. RENDER '
+                + 'is how it reads on the page. Friction means checking what genuinely resists; it '
+                + 'never requires adversity, cost, escalation, failure, or a changed state. This '
+                + 'shapes how the beat is narrated, never what the outcome turns out to be.';
             const body = this._substitute(cap.body.trim());
-            return `<scene_directive name="${cap.label}">\n${header}\n\n${body}\n</scene_directive>`;
+            return `<skill name="beat" parent="narration" beat="${cap.label}">\n`
+                + `${header}\n\n${body}\n</skill>`;
         },
 
         isValidLabel(label) {

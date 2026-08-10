@@ -1,6 +1,7 @@
 /**
- * NDS: Narration Beat Switch v0.4.3
- * Classify beat → inject scene_directive capsule via {{getvar::nds_beat_style}}
+ * NDS: Narration Beat Switch v0.5.0
+ * Classify beat → inject the narration `beat` sub-skill capsule via
+ * {{getvar::nds_beat_style}}
  * Capsules come from the .md files in library/templates/ — read fresh every
  * boot, no cache. Edit them with tools/nbs_template_editor.py.
  */

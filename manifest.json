@@ -6,7 +6,7 @@
     "js": "index.js",
     "css": "style.css",
     "author": "digital-desires",
-    "version": "0.4.3",
+    "version": "0.5.0",
     "homePage": "https://github.com/digital-desires/nds-narration-beat-switch",
     "auto_update": false
 }
