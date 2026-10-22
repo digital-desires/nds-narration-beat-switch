@@ -1,3 +1,4 @@
+// v0.3.2 — 2026-09-28
 (function () {
     'use strict';
 
@@ -37,6 +38,52 @@
                         </div>
                         <div class="nbs-field"><label>Timeout (ms)</label><input id="nbs-timeout" class="text_pole" type="number"></div>
                         <hr>
+                        <div class="nbs-cartridges">
+                            <b>Cartridges</b>
+                            <div class="nbs-hint">Edit the markdown here. Create, Load, Save, and Delete keep <em>your</em> copies in the extension — the browser cannot write into the extension folder. Shipped files stay on disk unless you Save over them.</div>
+                            <div class="nbs-field"><label>Preset</label>
+                                <select id="nbs-preset-select" class="text_pole"></select>
+                                <textarea id="nbs-preset-md" class="text_pole nbs-md-view" rows="6"></textarea>
+                                <div class="nbs-cart-actions">
+                                    <button type="button" class="menu_button" data-nbs-cart="create" data-kind="preset">Create</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="load" data-kind="preset">Load .md</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="save" data-kind="preset">Save</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="delete" data-kind="preset">Delete</button>
+                                </div>
+                            </div>
+                            <div class="nbs-field"><label>World Setting</label>
+                                <select id="nbs-world-select" class="text_pole"></select>
+                                <textarea id="nbs-world-md" class="text_pole nbs-md-view" rows="10"></textarea>
+                                <div class="nbs-cart-actions">
+                                    <button type="button" class="menu_button" data-nbs-cart="create" data-kind="world">Create</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="load" data-kind="world">Load .md</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="save" data-kind="world">Save</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="delete" data-kind="world">Delete</button>
+                                </div>
+                            </div>
+                            <div class="nbs-field"><label>Narrative Style</label>
+                                <select id="nbs-style-select" class="text_pole"></select>
+                                <textarea id="nbs-style-md" class="text_pole nbs-md-view" rows="8"></textarea>
+                                <div class="nbs-cart-actions">
+                                    <button type="button" class="menu_button" data-nbs-cart="create" data-kind="style">Create</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="load" data-kind="style">Load .md</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="save" data-kind="style">Save</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="delete" data-kind="style">Delete</button>
+                                </div>
+                            </div>
+                            <div class="nbs-field"><label>Beat template</label>
+                                <select id="nbs-beat-select" class="text_pole"></select>
+                                <textarea id="nbs-beat-md" class="text_pole nbs-md-view" rows="10"></textarea>
+                                <div class="nbs-cart-actions">
+                                    <button type="button" class="menu_button" data-nbs-cart="create" data-kind="template">Create</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="load" data-kind="template">Load .md</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="save" data-kind="template">Save</button>
+                                    <button type="button" class="menu_button" data-nbs-cart="delete" data-kind="template">Delete</button>
+                                </div>
+                            </div>
+                            <input type="file" id="nbs-cart-file" accept=".md,.txt,text/markdown,text/plain" hidden>
+                        </div>
+                        <hr>
                         <div class="nbs-templates">
                             <b>Templates &amp; Capsules</b>
                             <div class="nbs-hint">A template is a full set of styles. The classifier only sees the capsules of the active template. Pick which one is active here; edit them in the desktop editor.</div>
@@ -74,8 +121,10 @@
             target.appendChild(wrap);
             UI.bindSettings();
             UI.bindTemplateUi();
+            UI.bindCartridgeUi();
             UI.loadTemplateIntoDraft(window.NBS.Templates.getActiveTemplateName());
             UI.syncSettingsUi();
+            UI.syncCartridgeUi();
         },
 
         // ── Template picker + read-only viewer ────────────────────────────
@@ -173,7 +222,9 @@
             el('nbs-template-select')?.addEventListener('change', function () {
                 if (!T.setActiveTemplate(this.value)) return;
                 UI.loadTemplateIntoDraft(this.value);
+                window.NBS.State.setCartridgeField('template', this.value);
                 UI.refreshStatus();
+                UI.syncCartridgeUi();
                 UI._toast(`Active template: ${this.value}`, 'success');
             });
 
@@ -251,6 +302,7 @@
             const showLocal = !s.useTrackerOpenRouter || cfg.source === 'local';
             el('nbs-local-or').hidden = !showLocal;
             UI.refreshStatus();
+            UI.syncCartridgeUi();
         },
 
         refreshStatus() {
@@ -281,22 +333,366 @@
             window.STUnifiedToolbar?.update?.();
         },
 
+        fillSelect(sel, options, value) {
+            if (!sel) return;
+            const current = String(value ?? '');
+            sel.innerHTML = '';
+            for (const opt of options || []) {
+                const o = document.createElement('option');
+                o.value = String(opt.value ?? '');
+                o.textContent = opt.label ?? o.value;
+                sel.appendChild(o);
+            }
+            if (current && ![...sel.options].some((o) => o.value === current)) {
+                const extra = document.createElement('option');
+                extra.value = current;
+                extra.textContent = current;
+                sel.insertBefore(extra, sel.firstChild);
+            }
+            sel.value = current;
+        },
+
+        _cartDirty: { preset: false, world: false, style: false, template: false },
+        _cartLoadKind: '',
+
+        cartField(kind) {
+            return {
+                preset: { select: 'nbs-preset-select', md: 'nbs-preset-md', field: 'preset' },
+                world: { select: 'nbs-world-select', md: 'nbs-world-md', field: 'world' },
+                style: { select: 'nbs-style-select', md: 'nbs-style-md', field: 'style' },
+                template: { select: 'nbs-beat-select', md: 'nbs-beat-md', field: 'template' },
+            }[kind];
+        },
+
+        currentCartId(kind) {
+            const spec = UI.cartField(kind);
+            return spec ? (document.getElementById(spec.select)?.value || '') : '';
+        },
+
+        applyCart(kind, id) {
+            const spec = UI.cartField(kind);
+            if (!spec) return;
+            window.NBS.State.setCartridgeField(spec.field, id);
+            UI._cartDirty[kind] = false;
+            UI.loadTemplateIntoDraft(window.NBS.Templates.getActiveTemplateName());
+            UI.syncCartridgeUi();
+            UI.refreshStatus();
+        },
+
+        fillCartText(kind, force) {
+            const spec = UI.cartField(kind);
+            const box = spec && document.getElementById(spec.md);
+            if (!box) return;
+            if (UI._cartDirty[kind] && !force) return;
+            const C = window.NBS.Cartridges;
+            const T = window.NBS.Templates;
+            const rec = window.NBS.State.getCartridgeRecord();
+            const template = rec.template || T?.getActiveTemplateName?.() || '';
+            const raw = {
+                preset: rec.preset ? (C?.presetRaw?.(rec.preset) || '') : '',
+                world: rec.world ? (C?.worldRaw?.(rec.world) || '') : '',
+                style: rec.style ? (C?.styleRaw?.(rec.style) || '') : '',
+                template: template ? (T?.exportTemplate?.(template) || '') : '',
+            }[kind];
+            box.value = raw || '';
+        },
+
+        syncCartridgeUi() {
+            const C = window.NBS.Cartridges;
+            const T = window.NBS.Templates;
+            const rec = window.NBS.State.getCartridgeRecord();
+            const template = rec.template || T?.getActiveTemplateName?.() || '';
+            const el = (id) => document.getElementById(id);
+            UI.fillSelect(el('nbs-preset-select'), C?.presetOptions?.(!!(rec.world || rec.style || rec.preset)) || [], rec.preset);
+            UI.fillSelect(el('nbs-world-select'), C?.worldOptions?.() || [], rec.world);
+            UI.fillSelect(el('nbs-style-select'), C?.styleOptions?.() || [], rec.style);
+            UI.fillSelect(el('nbs-beat-select'), C?.templateOptions?.() || [], template);
+            UI.fillCartText('preset');
+            UI.fillCartText('world');
+            UI.fillCartText('style');
+            UI.fillCartText('template');
+            window.STUnifiedToolbar?.update?.();
+        },
+
+        async askCartName(kind) {
+            const labels = { world: 'World Setting name', style: 'Narrative Style name', preset: 'Preset name', template: 'Beat template name' };
+            const ctx = window.NBS.getContext?.();
+            if (ctx?.Popup?.show?.input) {
+                const v = await ctx.Popup.show.input(labels[kind] || 'Name', null, '');
+                return String(v || '').trim();
+            }
+            return String(window.prompt(labels[kind] || 'Name', '') || '').trim();
+        },
+
+        async createCartridge(kind) {
+            const name = await UI.askCartName(kind);
+            if (!name) return;
+            const C = window.NBS.Cartridges;
+            try {
+                if (kind === 'template') {
+                    const raw = C.blankTemplate(name);
+                    const id = C.saveUserTemplate(raw, '');
+                    UI.applyCart('template', id);
+                } else {
+                    const blank = { world: C.blankWorld, style: C.blankStyle, preset: C.blankPreset }[kind];
+                    const item = C.saveUserRaw(kind, blank(name), '');
+                    UI.applyCart(kind, item.id);
+                }
+                UI.fillCartText(kind, true);
+                UI._toast(`Created ${name}`, 'success');
+            } catch (err) {
+                UI._toast(err.message, 'error');
+            }
+        },
+
+        loadCartridgeFile(kind) {
+            const input = document.getElementById('nbs-cart-file');
+            if (!input) return;
+            UI._cartLoadKind = kind;
+            input.value = '';
+            input.click();
+        },
+
+        async onCartridgeFile(ev) {
+            const file = ev.target.files?.[0];
+            const kind = UI._cartLoadKind;
+            UI._cartLoadKind = '';
+            if (!file || !kind) return;
+            const raw = await file.text();
+            const C = window.NBS.Cartridges;
+            try {
+                if (kind === 'template') {
+                    const id = C.saveUserTemplate(raw, UI.currentCartId('template'));
+                    UI.applyCart('template', id);
+                } else {
+                    const item = C.saveUserRaw(kind, raw, UI.currentCartId(kind));
+                    UI.applyCart(kind, item.id);
+                }
+                UI.fillCartText(kind, true);
+                UI._toast(`Loaded ${file.name}`, 'success');
+            } catch (err) {
+                UI._toast(err.message, 'error');
+            }
+        },
+
+        saveCartridge(kind) {
+            const spec = UI.cartField(kind);
+            const raw = document.getElementById(spec.md)?.value || '';
+            const C = window.NBS.Cartridges;
+            try {
+                if (kind === 'template') {
+                    const id = C.saveUserTemplate(raw, UI.currentCartId('template'));
+                    UI.applyCart('template', id);
+                } else {
+                    const item = C.saveUserRaw(kind, raw, UI.currentCartId(kind));
+                    UI.applyCart(kind, item.id);
+                }
+                UI.fillCartText(kind, true);
+                UI._toast('Saved', 'success');
+            } catch (err) {
+                UI._toast(err.message, 'error');
+            }
+        },
+
+        deleteCartridge(kind) {
+            const id = UI.currentCartId(kind);
+            if (!id) {
+                UI._toast('Nothing selected.', 'warning');
+                return;
+            }
+            const C = window.NBS.Cartridges;
+            const result = kind === 'template' ? C.deleteUserTemplate(id) : C.deleteUser(kind, id);
+            if (!result.ok) {
+                if (result.reason === 'shipped') UI._toast('Shipped cartridges stay on disk. Save your own copy, then delete that.', 'warning');
+                else UI._toast('Could not delete that cartridge.', 'error');
+                return;
+            }
+            UI.applyCart(kind, '');
+            UI.fillCartText(kind, true);
+            UI._toast(result.restored ? 'Reverted to the shipped file.' : 'Deleted.', 'success');
+        },
+
+        bindCartridgeUi() {
+            const el = (id) => document.getElementById(id);
+            const apply = (field, kind) => function () {
+                UI._cartDirty[kind] = false;
+                window.NBS.State.setCartridgeField(field, this.value);
+                UI.loadTemplateIntoDraft(window.NBS.Templates.getActiveTemplateName());
+                UI.syncCartridgeUi();
+                UI.refreshStatus();
+            };
+            el('nbs-preset-select')?.addEventListener('change', apply('preset', 'preset'));
+            el('nbs-world-select')?.addEventListener('change', apply('world', 'world'));
+            el('nbs-style-select')?.addEventListener('change', apply('style', 'style'));
+            el('nbs-beat-select')?.addEventListener('change', apply('template', 'template'));
+            for (const kind of ['preset', 'world', 'style', 'template']) {
+                const spec = UI.cartField(kind);
+                el(spec.md)?.addEventListener('input', () => { UI._cartDirty[kind] = true; });
+            }
+            document.getElementById('nbs-settings')?.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-nbs-cart]');
+                if (!btn) return;
+                const kind = btn.dataset.kind;
+                const act = btn.dataset.nbsCart;
+                if (act === 'create') UI.createCartridge(kind);
+                else if (act === 'load') UI.loadCartridgeFile(kind);
+                else if (act === 'save') UI.saveCartridge(kind);
+                else if (act === 'delete') UI.deleteCartridge(kind);
+            });
+            el('nbs-cart-file')?.addEventListener('change', (e) => { UI.onCartridgeFile(e); });
+        },
+
+        _lastSessionKey: '',
+        _askOpen: false,
+        _shellId: 'beat-style',
+
+        sessionKey(payloadChatId) {
+            const master = window.NarratorSuiteMaster;
+            if (master?._resolveSessionKey) return master._resolveSessionKey(payloadChatId);
+            const ctx = window.NBS.getContext?.();
+            const id = payloadChatId
+                || (typeof ctx?.getCurrentChatId === 'function' ? ctx.getCurrentChatId() : '')
+                || ctx?.chatId
+                || '';
+            return String(id || '');
+        },
+
+        registerChatStartHook() {
+            const ctx = window.NBS.getContext?.();
+            const source = ctx?.eventSource;
+            const types = ctx?.eventTypes || ctx?.event_types;
+            if (!source || !types?.CHAT_CHANGED) {
+                console.warn('[NBS] CHAT_CHANGED unavailable — chat-start picker disabled');
+                return;
+            }
+            source.on(types.CHAT_CHANGED, (payload) => UI.onChatChanged(payload));
+            setTimeout(() => UI.onChatChanged(), 0);
+        },
+
+        onChatChanged(payload) {
+            const ctx = window.NBS.getContext?.();
+            const isSillyTavernSystem = String(ctx?.name2 || '').trim() === 'SillyTavern System';
+            if (isSillyTavernSystem) {
+                document.getElementById('nbs-chat-start')?.remove();
+                UI._askOpen = false;
+                UI._lastSessionKey = '';
+                return;
+            }
+            const key = UI.sessionKey(payload);
+            if (!key) return;
+            if (key === UI._lastSessionKey) return;
+            UI._lastSessionKey = key;
+            const rec = window.NBS.State.getCartridgeRecord();
+            if (rec.template) window.NBS.Templates.setActiveTemplate(rec.template);
+            window.NBS.State.writeCartridgeVariables(rec);
+            UI.loadTemplateIntoDraft(window.NBS.Templates.getActiveTemplateName());
+            UI.syncCartridgeUi();
+            UI.refreshStatus();
+            if (!rec.asked) UI.openChatStartPicker();
+        },
+
+        openChatStartPicker() {
+            if (UI._askOpen) return;
+            if (document.getElementById('nbs-chat-start')) return;
+            UI._askOpen = true;
+            const C = window.NBS.Cartridges;
+            const T = window.NBS.Templates;
+            const rec = window.NBS.State.getCartridgeRecord();
+            const template = rec.template || T?.getActiveTemplateName?.() || '';
+            const overlay = document.createElement('div');
+            overlay.id = 'nbs-chat-start';
+            overlay.className = 'nbs-chat-start';
+            overlay.innerHTML = `
+                <div class="nbs-chat-start-card" role="dialog" aria-labelledby="nbs-chat-start-title">
+                    <h3 id="nbs-chat-start-title">Load cartridges</h3>
+                    <p class="nbs-hint">World Setting, Narrative Style, and an optional Preset. Skip leaves all three empty except the current beat template.</p>
+                    <label>Preset
+                        <select id="nbs-start-preset" class="text_pole"></select>
+                    </label>
+                    <label>World Setting
+                        <select id="nbs-start-world" class="text_pole"></select>
+                    </label>
+                    <label>Narrative Style
+                        <select id="nbs-start-style" class="text_pole"></select>
+                    </label>
+                    <label>Beat template
+                        <select id="nbs-start-beat" class="text_pole"></select>
+                    </label>
+                    <div class="nbs-chat-start-actions">
+                        <button type="button" id="nbs-start-skip" class="menu_button">Skip</button>
+                        <button type="button" id="nbs-start-confirm" class="menu_button">Confirm</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            UI.fillSelect(overlay.querySelector('#nbs-start-preset'), C?.presetOptions?.(false) || [], rec.preset);
+            UI.fillSelect(overlay.querySelector('#nbs-start-world'), C?.worldOptions?.() || [], rec.world);
+            UI.fillSelect(overlay.querySelector('#nbs-start-style'), C?.styleOptions?.() || [], rec.style);
+            UI.fillSelect(overlay.querySelector('#nbs-start-beat'), C?.templateOptions?.() || [], template);
+
+            const startPreset = overlay.querySelector('#nbs-start-preset');
+            startPreset?.addEventListener('change', function () {
+                const p = C?.getPreset?.(this.value);
+                if (!p) return;
+                if (p.world) overlay.querySelector('#nbs-start-world').value = p.world;
+                if (p.style) overlay.querySelector('#nbs-start-style').value = p.style;
+                if (p.template) overlay.querySelector('#nbs-start-beat').value = p.template;
+            });
+
+            const close = (skip) => {
+                const world = overlay.querySelector('#nbs-start-world')?.value || '';
+                const style = overlay.querySelector('#nbs-start-style')?.value || '';
+                const beat = overlay.querySelector('#nbs-start-beat')?.value || '';
+                const picked = overlay.querySelector('#nbs-start-preset')?.value || '';
+                overlay.remove();
+                UI._askOpen = false;
+                if (skip) {
+                    window.NBS.State.applyCartridgeRecord({
+                        world: '',
+                        style: '',
+                        template: T?.getActiveTemplateName?.() || '',
+                        preset: '',
+                        asked: true,
+                    });
+                } else {
+                    const matched = C?.matchPreset?.(world, style, beat) || '';
+                    window.NBS.State.applyCartridgeRecord({
+                        world,
+                        style,
+                        template: beat,
+                        preset: picked || matched,
+                        asked: true,
+                    });
+                }
+                UI.loadTemplateIntoDraft(window.NBS.Templates.getActiveTemplateName());
+                UI.syncCartridgeUi();
+                UI.refreshStatus();
+            };
+            overlay.querySelector('#nbs-start-skip')?.addEventListener('click', () => close(true));
+            overlay.querySelector('#nbs-start-confirm')?.addEventListener('click', () => close(false));
+        },
+
         getToolbarActions() {
-            // Getters, not values: these actions are registered once at boot, and the
-            // label only exists after the first classification.
             const label = () => window.NBS.State.lastLabel;
-            const title = () => (label() ? `Beat Switch (${label()})` : 'Beat Switch');
+            const C = () => window.NBS.Cartridges;
+            const rec = () => window.NBS.State.getCartridgeRecord();
+            const apply = (field) => (value) => {
+                window.NBS.State.setCartridgeField(field, value);
+                UI.loadTemplateIntoDraft(window.NBS.Templates.getActiveTemplateName());
+                UI.syncCartridgeUi();
+                UI.refreshStatus();
+            };
             return [
                 {
                     id: 'nbs-power',
                     group: 'nbs',
                     groupLabel: 'Beat Style',
                     groupIcon: 'fa-feather-pointed',
-                    title,
+                    title: 'Beat Switch',
                     icon: 'fa-power-off',
                     master: true,
-                    active: () => !!window.NBS.State.getSettings().enabled,
-                    warning: () => !window.NBS.State.getSettings().enabled,
+                    active: () => !!window.NBS.State.getSettings().enabled && window.NarratorSuiteMaster?.isEnabled?.() !== false,
+                    paused: () => !!window.NBS.State.getSettings().enabled && window.NarratorSuiteMaster?.isEnabled?.() === false,
                     onClick: () => {
                         UI.setEnabled(!window.NBS.State.getSettings().enabled);
                     },
@@ -314,6 +710,50 @@
                         UI.refreshStatus();
                         window.STUnifiedToolbar?.update?.();
                     },
+                },
+                {
+                    id: 'nbs-preset',
+                    group: 'nbs',
+                    groupLabel: 'Beat Style',
+                    groupIcon: 'fa-feather-pointed',
+                    kind: 'select',
+                    title: 'Preset',
+                    options: () => C()?.presetOptions?.(!!(rec().world || rec().style || rec().preset)) || [{ value: '', label: '—' }],
+                    value: () => rec().preset,
+                    onChange: apply('preset'),
+                },
+                {
+                    id: 'nbs-world',
+                    group: 'nbs',
+                    groupLabel: 'Beat Style',
+                    groupIcon: 'fa-feather-pointed',
+                    kind: 'select',
+                    title: 'World Setting',
+                    options: () => C()?.worldOptions?.() || [{ value: '', label: 'None' }],
+                    value: () => rec().world,
+                    onChange: apply('world'),
+                },
+                {
+                    id: 'nbs-style',
+                    group: 'nbs',
+                    groupLabel: 'Beat Style',
+                    groupIcon: 'fa-feather-pointed',
+                    title: 'Narrative Style',
+                    kind: 'select',
+                    options: () => C()?.styleOptions?.() || [{ value: '', label: 'None' }],
+                    value: () => rec().style,
+                    onChange: apply('style'),
+                },
+                {
+                    id: 'nbs-beat-template',
+                    group: 'nbs',
+                    groupLabel: 'Beat Style',
+                    groupIcon: 'fa-feather-pointed',
+                    kind: 'select',
+                    title: 'Beat template',
+                    options: () => C()?.templateOptions?.() || [],
+                    value: () => rec().template || window.NBS.Templates?.getActiveTemplateName?.() || '',
+                    onChange: apply('template'),
                 },
             ];
         },

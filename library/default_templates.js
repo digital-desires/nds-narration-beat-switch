@@ -23,6 +23,7 @@
     window.NBS.DefaultTemplateFiles = [
         'dnd_mechanics.md',
         'genre_chameleon.md',
+        'gm_beats.md',
         'gm_manual_ext.md',
     ];
 

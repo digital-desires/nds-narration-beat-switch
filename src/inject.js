@@ -1,3 +1,4 @@
+// v0.2.1 — 2026-09-28
 (function () {
     'use strict';
 
@@ -12,12 +13,23 @@
 
         async prepareForGeneration(dryRun) {
             if (dryRun) return;
+            const context = window.NBS.getContext?.();
+            if (String(context?.name2 || '').trim() === 'SillyTavern System') {
+                window.NBS.State.setBeatVariable('');
+                window.NBS.State.setChatVariable(window.NBS.VAR_WORLD, '');
+                window.NBS.State.setChatVariable(window.NBS.VAR_STYLE, '');
+                return;
+            }
             if (!window.NBS.State.getSettings().enabled) {
                 window.NBS.State.setBeatVariable('');
+                window.NBS.State.setChatVariable(window.NBS.VAR_WORLD, '');
+                window.NBS.State.setChatVariable(window.NBS.VAR_STYLE, '');
                 return;
             }
             if (!Inject.suiteOn()) {
                 window.NBS.State.setBeatVariable('');
+                window.NBS.State.setChatVariable(window.NBS.VAR_WORLD, '');
+                window.NBS.State.setChatVariable(window.NBS.VAR_STYLE, '');
                 return;
             }
 
@@ -31,6 +43,7 @@
                 const label = await window.NBS.Decide.run();
                 const capsule = window.NBS.State.resolveCapsule(label);
                 window.NBS.State.setBeatVariable(capsule);
+                window.NBS.State.writeCartridgeVariables();
                 window.NBS.State.log('injected', label, capsule ? capsule.slice(0, 80) : '(empty)');
                 window.NBS.UI?.refreshStatus?.();
             })();

@@ -72,6 +72,34 @@
                                               ]
                     },
                     {
+                        "identifier":  "nds_world_setting_slot",
+                        "name":  "NDS World Setting",
+                        "system_prompt":  false,
+                        "enabled":  true,
+                        "marker":  false,
+                        "role":  "system",
+                        "content":  "{{getvar::nds_world_setting}}",
+                        "injection_position":  0,
+                        "injection_depth":  4,
+                        "forbid_overrides":  false,
+                        "injection_order":  100,
+                        "injection_trigger":  []
+                    },
+                    {
+                        "identifier":  "nds_narrative_style_slot",
+                        "name":  "NDS Narrative Style",
+                        "system_prompt":  false,
+                        "enabled":  true,
+                        "marker":  false,
+                        "role":  "system",
+                        "content":  "{{getvar::nds_narrative_style}}",
+                        "injection_position":  0,
+                        "injection_depth":  4,
+                        "forbid_overrides":  false,
+                        "injection_order":  100,
+                        "injection_trigger":  []
+                    },
+                    {
                         "identifier":  "worldInfoBefore",
                         "name":  "World Info Before",
                         "system_prompt":  true,
@@ -186,6 +214,14 @@
                                            },
                                            {
                                                "identifier":  "nds_beat_style_slot",
+                                               "enabled":  true
+                                           },
+                                           {
+                                               "identifier":  "nds_world_setting_slot",
+                                               "enabled":  true
+                                           },
+                                           {
+                                               "identifier":  "nds_narrative_style_slot",
                                                "enabled":  true
                                            },
                                            {

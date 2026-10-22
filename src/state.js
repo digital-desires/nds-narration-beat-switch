@@ -1,3 +1,4 @@
+// v0.3.0 — 2026-08-30
 (function () {
     'use strict';
 
@@ -5,6 +6,9 @@
 
     const SETTINGS_KEY = 'nds_narration_beat_switch';
     const VAR_KEY = 'nds_beat_style';
+    const VAR_WORLD = 'nds_world_setting';
+    const VAR_STYLE = 'nds_narrative_style';
+    const CARTRIDGE_KEY = 'nbs_cartridges';
 
     const defaultSettings = {
         enabled: true,
@@ -43,6 +47,14 @@
             if (typeof s.debug !== 'boolean') s.debug = false;
             if (!s.openRouter || typeof s.openRouter !== 'object') {
                 s.openRouter = { ...defaultSettings.openRouter };
+            }
+            if (!s.userCartridges || typeof s.userCartridges !== 'object') {
+                s.userCartridges = { worlds: {}, styles: {}, presets: {}, templates: {} };
+            }
+            for (const key of ['worlds', 'styles', 'presets', 'templates']) {
+                if (!s.userCartridges[key] || typeof s.userCartridges[key] !== 'object') {
+                    s.userCartridges[key] = {};
+                }
             }
             this.settings = s;
             return s;
@@ -120,16 +132,115 @@
             return T.getCapsuleBody(null, this.normalizeLabel(label));
         },
 
-        setBeatVariable(value) {
+        _meta() {
+            const ctx = window.NBS.getContext?.();
+            return ctx?.chatMetadata || ctx?.chat_metadata || window.chat_metadata || null;
+        },
+
+        setChatVariable(key, value) {
             try {
-                const ctx = window.NBS.getContext?.();
-                const meta = ctx?.chatMetadata || ctx?.chat_metadata || window.chat_metadata;
+                const meta = this._meta();
                 if (!meta) return;
                 if (!meta.variables) meta.variables = {};
-                meta.variables[VAR_KEY] = value ?? '';
+                meta.variables[key] = value ?? '';
             } catch (err) {
-                console.warn('[NBS] setBeatVariable failed:', err.message);
+                console.warn(`[NBS] setChatVariable(${key}) failed:`, err.message);
             }
+        },
+
+        setBeatVariable(value) {
+            this.setChatVariable(VAR_KEY, value);
+        },
+
+        emptyCartridgeRecord() {
+            return { world: '', style: '', template: '', preset: '', asked: false };
+        },
+
+        getCartridgeRecord() {
+            const meta = this._meta();
+            const raw = meta?.[CARTRIDGE_KEY];
+            const out = this.emptyCartridgeRecord();
+            if (!raw || typeof raw !== 'object') return out;
+            if (typeof raw.world === 'string') out.world = raw.world;
+            if (typeof raw.style === 'string') out.style = raw.style;
+            if (typeof raw.template === 'string') out.template = raw.template;
+            if (typeof raw.preset === 'string') out.preset = raw.preset;
+            if (typeof raw.asked === 'boolean') out.asked = raw.asked;
+            return out;
+        },
+
+        saveCartridgeRecord(record) {
+            const meta = this._meta();
+            if (!meta) return;
+            meta[CARTRIDGE_KEY] = {
+                world: record.world || '',
+                style: record.style || '',
+                template: record.template || '',
+                preset: record.preset || '',
+                asked: !!record.asked,
+            };
+            this.writeCartridgeVariables(record);
+            const ctx = window.NBS.getContext?.();
+            if (typeof ctx?.saveMetadata === 'function') ctx.saveMetadata();
+        },
+
+        writeCartridgeVariables(record) {
+            const rec = record || this.getCartridgeRecord();
+            const C = window.NBS.Cartridges;
+            this.setChatVariable(VAR_WORLD, C?.worldBody?.(rec.world) || '');
+            this.setChatVariable(VAR_STYLE, C?.styleBody?.(rec.style) || '');
+        },
+
+        applyCartridgeRecord(record) {
+            const rec = { ...this.emptyCartridgeRecord(), ...record };
+            const C = window.NBS.Cartridges;
+            const T = window.NBS.Templates;
+            if (rec.template && T?.setActiveTemplate) T.setActiveTemplate(rec.template);
+            else rec.template = T?.getActiveTemplateName?.() || '';
+            if (rec.preset && C?.getPreset?.(rec.preset)) {
+                rec.preset = rec.preset;
+            } else {
+                rec.preset = C?.matchPreset?.(rec.world, rec.style, rec.template) || '';
+            }
+            this.saveCartridgeRecord(rec);
+            return rec;
+        },
+
+        setCartridgeField(field, value) {
+            const rec = this.getCartridgeRecord();
+            const C = window.NBS.Cartridges;
+            const T = window.NBS.Templates;
+
+            if (field === 'preset') {
+                if (!value) {
+                    rec.preset = '';
+                    rec.asked = true;
+                    this.saveCartridgeRecord(rec);
+                    return rec;
+                }
+                const p = C?.getPreset?.(value);
+                if (!p) return rec;
+                rec.preset = value;
+                if (p.world) rec.world = p.world;
+                if (p.style) rec.style = p.style;
+                if (p.template) rec.template = p.template;
+                rec.asked = true;
+                return this.applyCartridgeRecord(rec);
+            }
+
+            rec[field] = value || '';
+            rec.asked = true;
+            if (field === 'world') {
+                const world = C?.getWorld?.(rec.world);
+                if (world?.template) rec.template = world.template;
+            }
+            rec.preset = C?.matchPreset?.(rec.world, rec.style, rec.template || T?.getActiveTemplateName?.()) || '';
+            return this.applyCartridgeRecord(rec);
+        },
+
+        persistMetadata() {
+            const ctx = window.NBS.getContext?.();
+            if (typeof ctx?.saveMetadata === 'function') ctx.saveMetadata();
         },
 
         log(...args) {
@@ -139,4 +250,6 @@
 
     window.NBS.State = State;
     window.NBS.VAR_KEY = VAR_KEY;
+    window.NBS.VAR_WORLD = VAR_WORLD;
+    window.NBS.VAR_STYLE = VAR_STYLE;
 })();

@@ -1,5 +1,5 @@
 /**
- * NDS: Narration Beat Switch v0.5.0
+ * NDS: Narration Beat Switch v0.7.3
  * Classify beat → inject the narration `beat` sub-skill capsule via
  * {{getvar::nds_beat_style}}
  * Capsules come from the .md files in library/templates/ — read fresh every
@@ -9,7 +9,7 @@
 (function () {
     'use strict';
 
-    const TARGET_VERSION = '0.4.3';
+    const TARGET_VERSION = '0.7.3';
     console.log(`[NBS ${TARGET_VERSION}] Loading…`);
 
     function getExtensionRoot() {
@@ -50,8 +50,10 @@
     const modules = [
         'lib/nds_dual_mode.js',
         'library/default_templates.js',
+        'library/default_cartridges.js',
         'src/state.js',
         'src/templates.js',
+        'src/cartridges.js',
         'src/api.js',
         'src/sensor.js',
         'src/decide.js',
@@ -88,6 +90,7 @@
         // The .md files in library/templates/ are the only source of truth.
         // Read fresh every boot — no cache, no settings copy, no seeding.
         await window.NBS.Templates.loadFromDisk();
+        await window.NBS.Cartridges?.loadFromDisk?.();
         const ok = await window.NBS.State.loadAll();
         if (!ok) {
             console.warn('[NBS] Not ready — missing soul/skill/format md or empty template');
@@ -95,6 +98,7 @@
 
         window.NBS.UI.ensureSettingsPanel();
         window.NBS.Inject.registerHook();
+        window.NBS.UI.registerChatStartHook();
 
         // NDS: Control — dual-mode chrome (suite or standalone shell)
         window.NBS.UI.bootChrome();

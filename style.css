@@ -1,3 +1,5 @@
+/* v0.3.0 — 2026-08-30 */
+
 #nbs-settings .nbs-settings-row {
     margin: 6px 0;
 }
@@ -64,9 +66,69 @@
 }
 
 #nbs-settings #nbs-capsule-body,
-#nbs-settings #nbs-io-textarea {
+#nbs-settings #nbs-io-textarea,
+#nbs-settings .nbs-md-view {
     width: 100%;
     font-family: monospace;
     font-size: 0.85em;
     resize: vertical;
+    margin-top: 6px;
+}
+
+#nbs-settings .nbs-cartridges {
+    margin: 8px 0;
+}
+
+#nbs-settings .nbs-cart-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.nbs-chat-start {
+    position: fixed;
+    inset: 0;
+    z-index: 13000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.nbs-chat-start-card {
+    width: min(420px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+    padding: 16px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--SmartThemeBorderColor, #3a4654);
+    background: var(--SmartThemeBlurTintColor, #171b21);
+    color: var(--SmartThemeBodyColor, #d8dee7);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.nbs-chat-start-card h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+}
+
+.nbs-chat-start-card label {
+    display: block;
+    margin: 10px 0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nbs-chat-start-card select {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.nbs-chat-start-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
 }

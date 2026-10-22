@@ -1,3 +1,4 @@
+// v0.2.0 — 2026-08-30
 /**
  * Templates — the .md files in library/templates/ ARE the templates.
  *
@@ -23,8 +24,9 @@
     }
 
     const Templates = {
-        // name -> { capsules: [{label, trigger, body}], file }
+        // name -> { capsules: [{label, trigger, body}], file, source }
         _templates: {},
+        _shipped: {},
 
         // ── Load from disk ────────────────────────────────────────────────
 
@@ -47,6 +49,7 @@
                     }
                     const { name, template } = this.importTemplateText(await res.text());
                     template.file = filename;
+                    template.source = 'disk';
                     loaded[name] = template;
                     console.info(`[NBS] Template loaded: "${name}" (${template.capsules.length} capsules) from ${filename}`);
                 } catch (err) {
@@ -54,7 +57,23 @@
                 }
             }
             this._templates = loaded;
+            this._shipped = {};
+            for (const [n, t] of Object.entries(loaded)) this._shipped[n] = clone(t);
             return loaded;
+        },
+
+        addUserTemplate(raw) {
+            const { name, template } = this.importTemplateText(raw);
+            template.file = `user:${name}`;
+            template.source = 'user';
+            this._templates[name] = template;
+            return name;
+        },
+
+        removeUserTemplate(name) {
+            const shipped = this._shipped[name];
+            if (shipped) this._templates[name] = clone(shipped);
+            else delete this._templates[name];
         },
 
         normalizeTemplate(tpl) {
@@ -151,20 +170,22 @@
             // pass… In the Narrator pass… keep hidden reasoning off-page." That is the
             // same Two Hats fiction that was cut from gm_core: the model cannot run
             // passes, and telling it to hide knowledge from itself makes it hesitant.
-            // It survived here because this repo is separate from the preset. The
-            // header now says what the four tags are, in one voice, without pretending
-            // there are two of them.
+            // It survived here because this repo is separate from the preset.
+            //
+            // Two later problems, both fixed here. It enumerated ADJUDICATE / PROCEDURE
+            // / GUARDRAILS / RENDER — one template's tag names, hard-coded into the
+            // generic path, so any other template received a glossary for tags it does
+            // not have. And it closed by restating the no-friction rule, which every
+            // capsule body was also restating, on top of the preset stating it. That
+            // made the router a place restraint accumulated. The header now says what
+            // the slot is and stops: a template describes its own tags, and restraint
+            // is the preset's job, stated once.
             const header =
-                'This is the beat sub-skill for the current moment: what kind of moment this is, '
-                + 'and how a moment of this kind is narrated. It configures narration only. '
-                + 'Established character definitions, world state, stats, abilities, relationships '
-                + 'and mechanics stay authoritative, and nothing here overrides them. The player\'s '
-                + 'message states an intention, not its result. ADJUDICATE is what to settle before '
-                + 'writing. PROCEDURE is how a moment of this kind actually plays out. GUARDRAILS '
-                + 'are the distortions this kind of moment invites, and what to do instead. RENDER '
-                + 'is how it reads on the page. Friction means checking what genuinely resists; it '
-                + 'never requires adversity, cost, escalation, failure, or a changed state. This '
-                + 'shapes how the beat is narrated, never what the outcome turns out to be.';
+                'This is the beat package for the current moment, selected for this turn. '
+                + 'It describes what kind of moment this is and what a moment of this kind '
+                + 'turns on. Established character definitions, world state, stats, abilities, '
+                + 'relationships and mechanics stay authoritative, and nothing here overrides '
+                + 'them. The player\'s message states an intention, not its result.';
             const body = this._substitute(cap.body.trim());
             return `<skill name="beat" parent="narration" beat="${cap.label}">\n`
                 + `${header}\n\n${body}\n</skill>`;
